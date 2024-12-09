@@ -1,0 +1,268 @@
+---
+title: "generación distintos tipos de ruido"
+author: "Ilia Zhigarev"
+date: "`r format(Sys.time(), '%d de %B de %Y, %H:%M')`"
+output:
+  html_document:
+---
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack)
+```
+
+# Gaussiano
+```{r}
+image_1_path <- file.path("fotos", "1.JPG")
+image_1_original_cimg <- load.image(image_1_path)
+image_1_fixed_cimg <- drop(image_1_original_cimg)
+
+set.seed(123)
+noise_std_dev <- 0.5
+image_1_array <- as.array(image_1_fixed_cimg)
+
+image_1_dims <- dim(image_1_array)
+
+noise_gaussian <- array(
+  rnorm(prod(image_1_dims),
+    mean = 0,
+    sd = noise_std_dev
+  ),
+  dim = dim(image_1_array)
+)
+
+image_1_noisy_array <- pmax(0, pmin(1, image_1_array + noise_gaussian))
+
+image_1_noisy_cimg <- as.cimg(
+  image_1_noisy_array,
+  x = image_1_dims[1],
+  y = image_1_dims[2],
+  cc = image_1_dims[3],
+  z = 1
+)
+
+layout(matrix(1:1, 1, 1))
+plot(image_1_original_cimg, main = "Original")
+plot(image_1_noisy_cimg, main = "Gaussian Noise")
+
+rm(
+  image_1_original_cimg,
+  image_1_fixed_cimg,
+  image_1_array,
+  noise_gaussian,
+  image_1_noisy_array,
+  image_1_noisy_cimg
+)
+```
+
+# Sinusoidal con alta frecuencia
+```{r}
+image_2_path <- file.path("fotos", "2.JPG")
+image_2_original_cimg <- load.image(image_2_path)
+image_2_fixed_cimg <- drop(image_2_original_cimg)
+image_2_array <- as.array(image_2_fixed_cimg)
+
+frequency <- 25 # Frequency of sinusoidal noise
+amplitude <- 0.2 # Amplitude of noise
+
+height <- dim(image_2_array)[1]
+width <- dim(image_2_array)[2]
+
+channels_original_2 <- lapply(1:3, function(i) as.vector(image_2_array[, , i]))
+
+noise_sinusoidal_alta <- lapply(channels_original_2, function(channel) {
+  x <- seq(0, 2 * pi, length.out = width)
+  y <- seq(0, 2 * pi, length.out = height)
+  noise_grid <- outer(sin(x * frequency), sin(y * frequency))
+  noise_vector <- as.vector(noise_grid) * amplitude
+  noise_vector
+})
+
+channels_noisy_2 <- Map(function(channel, n) pmax(0, pmin(1, channel + n)), channels_original_2, noise_sinusoidal_alta)
+
+image_2_noisy_cimg <- as.cimg(
+  array(
+    unlist(channels_noisy_2),
+    dim = c(dim(image_2_fixed_cimg)[1:2], 1, 3)
+  )
+)
+
+
+layout(matrix(1:1, 1, 1))
+plot(image_2_original_cimg, main = "Original")
+plot(image_2_noisy_cimg, main = "Sinusoidal con alta frecuencia")
+
+rm(
+  image_2_original_cimg,
+  channels_noisy_2,
+  channels_original_2,
+  image_2_array,
+  noise_sinusoidal_alta,
+  image_2_noisy_cimg
+)
+```
+
+# Sinusoidal con baja frecuencia
+```{r}
+image_3_path <- file.path("fotos", "3.JPG")
+image_3_original_cimg <- load.image(image_3_path)
+image_3_fixed_cimg <- drop(image_3_original_cimg)
+image_3_array <- as.array(image_3_fixed_cimg)
+
+frequency <- 2 # Frequency of sinusoidal noise
+amplitude <- 0.2 # Amplitude of noise
+
+height <- dim(image_3_array)[1]
+width <- dim(image_3_array)[2]
+
+channels_original_3 <- lapply(1:3, function(i) as.vector(image_3_array[, , i]))
+
+noise_sinusoidal_baja <- lapply(channels_original_3, function(channel) {
+  x <- seq(0, 2 * pi, length.out = width)
+  y <- seq(0, 2 * pi, length.out = height)
+  noise_grid <- outer(sin(x * frequency), sin(y * frequency))
+  noise_vector <- as.vector(noise_grid) * amplitude
+  noise_vector
+})
+
+channels_noisy_3 <- Map(function(channel, n) pmax(0, pmin(1, channel + n)), channels_original_3, noise_sinusoidal_baja)
+
+image_3_noisy_cimg <- as.cimg(
+  array(
+    unlist(channels_noisy_3),
+    dim = c(dim(image_3_fixed_cimg)[1:2], 1, 3)
+  )
+)
+
+layout(matrix(1:1, 1, 1))
+plot(image_3_original_cimg, main = "Original")
+plot(image_3_noisy_cimg, main = "Sinusoidal con baja frecuencia")
+
+rm(
+  image_3_original_cimg,
+  image_3_fixed_cimg,
+  image_3_array,
+  channels_original_3,
+  channels_noisy_3,
+  noise_sinusoidal_baja,
+  image_3_noisy_cimg
+)
+```
+
+
+# Salt & Pepper Noise
+```{r, warning=FALSE}
+image_4_path <- file.path("fotos", "4.JPG")
+image_4_original_cimg <- load.image(image_4_path)
+image_4_fixed_cimg <- drop(image_4_original_cimg)
+image_4_array <- as.array(image_4_fixed_cimg)
+
+channels_noisy_4 <- lapply(1:3, function(channel) {
+  channel_matrix <- image_4_array[, , channel]
+  noise_channel <- SpatialPack::imnoise(
+    img = channel_matrix,
+    type = "saltnpepper",
+    epsilon = 0.2
+  )
+  return(noise_channel)
+})
+
+image_4_noisy_array <- array(
+  unlist(channels_noisy_4),
+  dim = dim(image_4_fixed_cimg)
+)
+
+image_4_noisy_cmg <- as.cimg(image_4_noisy_array)
+
+
+layout(matrix(1:1, 1, 1))
+
+plot(as.cimg(image_4_original_cimg), main = "Original")
+plot(image_4_noisy_cmg, main = "Salt & Pepper Noise")
+rm(
+  image_4_original_cimg,
+  image_4_fixed_cimg,
+  image_4_array,
+  channels_noisy_4,
+  image_4_noisy_array,
+  image_4_noisy_cimg
+)
+```
+
+# Gamma Noise
+```{r, warning=FALSE}
+image_5_path <- file.path("fotos", "5.JPG")
+image_5_original_cimg <- load.image(image_5_path)
+image_5_fixed_cimg <- drop(image_5_original_cimg)
+image_5_array <- as.array(image_5_fixed_cimg)
+
+channels_noisy_5 <- lapply(1:3, function(channel) {
+  channel_matrix <- image_5_array[, , channel]
+  noise_channel <- SpatialPack::imnoise(
+    img = channel_matrix,
+    type = "gamma",
+    looks = 2
+  )
+  return(noise_channel)
+})
+
+image_5_noisy_array <- array(
+  unlist(channels_noisy_5),
+  dim = dim(image_5_fixed_cimg)
+)
+
+image_5_noisy_cimg <- as.cimg(image_5_noisy_array)
+
+layout(matrix(1:1, 1, 1))
+
+plot(image_5_original_cimg, main = "Original")
+plot(image_5_noisy_cimg, main = "Gamma Noise")
+rm(
+  image_5_original_cimg,
+  image_5_fixed_cimg,
+  image_5_array,
+  channels_noisy_5,
+  image_5_noisy_array,
+  image_5_noisy_cimg
+)
+```
+
+
+# uniform multiplicative noise
+```{r, warning=FALSE}
+image_5_path <- file.path("fotos", "5.JPG")
+image_5_original_cimg <- load.image(image_5_path)
+image_5_fixed_cimg <- drop(image_5_original_cimg)
+image_5_array <- as.array(image_5_fixed_cimg)
+
+channels_noisy_5 <- lapply(1:3, function(channel) {
+  channel_matrix <- image_5_array[, , channel]
+  noise_channel <- SpatialPack::imnoise(
+    img = channel_matrix,
+    type = "speckle",
+    looks = 2
+  )
+  return(noise_channel)
+})
+
+image_5_noisy_array <- array(
+  unlist(channels_noisy_5),
+  dim = dim(image_5_fixed_cimg)
+)
+
+image_5_noisy_cimg <- as.cimg(image_5_noisy_array)
+
+layout(matrix(1:1, 1, 1))
+
+plot(image_5_original_cimg, main = "Original")
+plot(image_5_noisy_cimg, main = "Uniform Noise")
+rm(
+  image_5_original_cimg,
+  image_5_fixed_cimg,
+  image_5_array,
+  channels_noisy_5,
+  image_5_noisy_array,
+  image_5_noisy_cimg
+)
+```
