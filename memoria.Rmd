@@ -1,0 +1,141 @@
+---
+title: "Eliminación de ruido en imágenes con wavelets."
+subtitle: "Análisis de señales"
+author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
+date: "`r Sys.Date()`"
+output:
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    figure_caption: "Figura" # Referencias en castellano
+    table_caption: "Tabla"
+  html_document:
+    echo: true
+    number_sections: true
+    theme: lumen
+    toc: true
+  html_notebook:
+    echo: true
+    number_sections: true
+    toc: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  bookdown::html_document2:
+    echo: true
+    number_sections: true
+    theme: spacelab
+    toc: true
+    figure_caption: "Figura"
+    table_caption: "Tabla"
+always_allow_html: true
+params:
+  lang: ES
+lang: "`r switch(params$lang, ES = 'es-ES', EN = 'en-US')`"
+language:
+  label:
+    fig: 'Figura '
+    tab: 'Tabla '
+    eq: 'Ecuación '
+    thm: 'Teorema '
+    lem: 'Lema '
+    def: 'Definición '
+    cor: 'Corolario '
+    prp: 'Proposición '
+    exm: 'Ejemplo '
+    exr: 'Ejercicio '
+    proof: 'Demostración. '
+    remark: 'Nota: '
+    solution: 'Solución. '
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm (list=ls())
+```
+
+# Introducción
+
+# Fundamento teórico: eliminación de ruido con wavelets
+
+# Funciones de programacion empleadas
+
+# Desarrollo y resultados
+
+Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
+```{r, message = FALSE}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim,EBImage, stringr,jpeg )
+```
+
+Comenzamos cargando y visualizando las fotografías a emplear.
+```{r}
+images_path <- list.files('./fotos', full.names = TRUE)
+
+nombres_images <- str_remove_all(string = str_remove_all(string = images_path, pattern= './fotos/'), pattern='\\.JPG|\\.jpg')
+
+images <- lapply(images_path, readJPEG) # Cargamos las imágenes
+names(images) <- nombres_images
+```
+
+
+## Inclusión de ruido sintético en las imágenes
+
+## Función imwd
+
+Como ya se ha visto (INCLUIR!!!!!!) para poder aplicar la función `imwd()`es necesario partir de una matriz cuadrada cuyas dimensiones sean potencia de dos. Por ello, en primer lugar creamos una función `recortar_imwd()` tal que dada una foto busca la submatriz cuadrada y potencia de dos más grande y a continuacón recorta la imagen a dicha submatriz cuadrada centrándola.
+
+```{r}
+# Pre-procesamiento al aplicado de función imwd (algoritmo de Mallat).
+
+recortar_imwd<- function(foto){
+  
+  # Dimensiones de la foto
+  dim_foto <- dim(foto)
+  filas <- dim_foto[1]
+  columnas <- dim_foto[2]
+  
+  lado_minimo <- min(filas, columnas)  # Tamaño submatriz cuadrada mas grande
+  lado_potencia2 <- 2^floor(log2(lado_minimo)) # Tamaño submatriz cuadrada potencia de dos mas grande
+  
+  # Recortar la foto en la zona central
+  
+  # Calculo de los indices iniciales
+  if (filas %% 2 == 0){
+   # Si el numero de filas es par
+  filas_begin <- (filas/2) +1 - (lado_potencia2/2)
+  }
+  else { # Si el numero de filas es impar
+    filas_begin <-(filas+1)/2 - (lado_potencia2/2)
+  }
+  
+  if (columnas %% 2 == 0){
+   # Si el numero de columnas es par
+  col_begin <- (columnas/2) + 1 - (lado_potencia2/2)
+  } else { # Si el numero de columnas es impar
+    col_begin <-(columnas+1)/2 - (lado_potencia2/2)
+  }
+  
+  # Calculo de los indices finales
+  filas_end <- filas_begin + lado_potencia2
+  col_end <- col_begin + lado_potencia2
+
+# Extraer la submatriz cuadrada centrada
+foto_cuadrada_centrada <- foto[filas_begin:filas_end, col_begin:col_end, ]
+# Si no se desea la submatriz centrada se puede modificar la funcion.
+return(foto_cuadrada_centrada)
+}
+```
+
+```{r}
+images_recortadas <- lapply(images, recortar_imwd)
+```
+
+
+
+## Función denoise...
+
+# Conclusiones
