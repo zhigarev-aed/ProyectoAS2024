@@ -1,0 +1,90 @@
+---
+title: "Eliminación de ruido en imágenes con wavelets."
+subtitle: "Análisis de señales"
+author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
+date: "`r Sys.Date()`"
+output:
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    figure_caption: "Figura" # Referencias en castellano
+    table_caption: "Tabla"
+  html_document:
+    echo: true
+    number_sections: true
+    theme: lumen
+    toc: true
+  html_notebook:
+    echo: true
+    number_sections: true
+    toc: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  bookdown::html_document2:
+    echo: true
+    number_sections: true
+    theme: spacelab
+    toc: true
+    figure_caption: "Figura"
+    table_caption: "Tabla"
+always_allow_html: true
+params:
+  lang: ES
+lang: "`r switch(params$lang, ES = 'es-ES', EN = 'en-US')`"
+language:
+  label:
+    fig: 'Figura '
+    tab: 'Tabla '
+    eq: 'Ecuación '
+    thm: 'Teorema '
+    lem: 'Lema '
+    def: 'Definición '
+    cor: 'Corolario '
+    prp: 'Proposición '
+    exm: 'Ejemplo '
+    exr: 'Ejercicio '
+    proof: 'Demostración. '
+    remark: 'Nota: '
+    solution: 'Solución. '
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm (list=ls())
+```
+
+# Introducción
+
+# Fundamento teórico: eliminación de ruido con wavelets
+
+# Funciones de programacion empleadas
+
+# Desarrollo y resultados
+
+Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
+```{r, message = FALSE}
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim,EBImage, stringr )
+```
+
+Comenzamos cargando y visualizando las fotografías a emplear.
+```{r}
+images_path <- list.files('./fotos', full.names = TRUE)
+
+nombres_images <- str_remove_all(string = str_remove_all(string = images_path, pattern= './fotos/'), pattern='\\.JPG|\\.jpg')
+
+images <- lapply(images_path, load.image) # Cargamos las imágenes
+names(images) <- nombres_images
+```
+
+## Inclusión de ruido sintético en las imágenes
+
+## Función imwd
+
+## Función denoise...
+
+# Conclusiones
