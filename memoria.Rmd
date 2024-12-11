@@ -68,7 +68,7 @@ Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 ```{r, message = FALSE}
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim,EBImage, stringr )
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim,EBImage, stringr, jpeg )
 ```
 
 Comenzamos cargando y visualizando las fotografías a emplear.
@@ -77,7 +77,9 @@ images_path <- list.files('./fotos', full.names = TRUE)
 
 nombres_images <- str_remove_all(string = str_remove_all(string = images_path, pattern= './fotos/'), pattern='\\.JPG|\\.jpg')
 
-images <- lapply(images_path, load.image) # Cargamos las imágenes
+images <- lapply(images_path, readJPEG) # Cargamos las imágenes
+
+# Nota: cambie de load.image a readJPEG pq asi ya no hace falta usar el drop para quitar lo de cimg, sale bien directamente
 names(images) <- nombres_images
 ```
 
