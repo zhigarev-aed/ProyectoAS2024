@@ -83,6 +83,31 @@ images <- lapply(images_path, readJPEG) # Cargamos las imágenes
 names(images) <- nombres_images
 ```
 
+```{r}
+# Rotamos algunas de las fotos para una visualización más uniforme
+fotos_a_girar <- c('1','2','3','4')
+images_rotadas <- lapply(images[fotos_a_girar], aperm, perm=c(2,1,3))
+
+
+for (i in fotos_a_girar){
+  images_rotadas[[i]]<images_rotadas[[i]][dim(images_rotadas[[i]])[1]:1,,]}
+
+images[fotos_a_girar] <- images_rotadas
+rm(images_rotadas)
+rm(fotos_a_girar)
+```
+
+
+```{r}
+# Visualizamos las imagenes originales
+
+par(mfrow = c(2, 3), mar = c(1, 1, 1, 1)) 
+
+for (img in nombres_images){
+  display(Image(images[[img]], colormode = 'Color'), method='r') 
+}
+```
+
 ## Inclusión de ruido sintético en las imágenes
 
 ## Función imwd
