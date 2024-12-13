@@ -104,9 +104,9 @@ rm(fotos_a_girar)
 
 par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
 
-# for (img in nombres_images) {
-#   display(Image(images[[img]], colormode = "Color"), method = "r")
-# }
+for (img in nombres_images) {
+  display(Image(images[[img]], colormode = "Color"), method = "r")
+}
 ```
 
 ## Inclusión de ruido sintético en las imágenes
@@ -243,12 +243,12 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
 }
 
 # Aplicar los diferentes tipos de ruido a cada imagen
-# add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
-# add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
-# add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
-# add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
-# add_noise_to_image("5", "gamma", list(looks = 2))
-# add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
+add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+add_noise_to_image("5", "gamma", list(looks = 2))
+add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
 ```
 
 
