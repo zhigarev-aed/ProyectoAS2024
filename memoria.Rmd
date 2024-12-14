@@ -87,6 +87,40 @@ names(images) <- nombres_images
 
 ## Función imwd
 
+Función para hacer cuadrada la imagen.
+```{r}
+hacer_cuadrada <- function(imagen) {
+  # Obtener las dimensiones de la imagen original
+  n_filas <- dim(imagen)[1]
+  n_columnas <- dim(imagen)[2]
+  
+  # Calcular el tamaño de la nueva imagen cuadrada
+  nuevo_tamano <- max(n_filas, n_columnas)
+  
+  # Crear una matriz de ceros de tamaño cuadrado
+  imagen_cuadrada <- array(0, dim = c(nuevo_tamano, nuevo_tamano, 3))
+  
+  # Copiar la imagen original en la parte superior izquierda de la nueva imagen
+  imagen_cuadrada[1:n_filas, 1:n_columnas, ] <- imagen
+  
+  return(imagen_cuadrada)
+}
+
+```
+
+
+Cargar imagenes en la función cuadrada
+
+
+```{r}
+foto_cuadrada <- hacer_cuadrada(images[[1]])
+#foto_cuadrada<-foto_cuadrada[1:4096, 1000:5095,]
+EBImage::display(Image(foto_cuadrada, colormode = 'Color'), method = 'r', title = 'Imagen cuadrada')
+```
+
+
+
+
 ## Función denoise...
 
 # Conclusiones
