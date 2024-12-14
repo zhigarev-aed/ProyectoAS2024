@@ -4,25 +4,25 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+  html_document:
+    echo: true
+    number_sections: true
+    theme: lumen
+    toc: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
     number_sections: true
     figure_caption: "Figura" # Referencias en castellano
     table_caption: "Tabla"
-  html_document:
-    echo: true
-    number_sections: true
-    theme: lumen
-    toc: true
   html_notebook:
     echo: true
     number_sections: true
     toc: true
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   bookdown::html_document2:
     echo: true
     number_sections: true
@@ -280,7 +280,7 @@ Cargar imagenes en la función cuadrada
 
 
 ```{r}
-foto_cuadrada <- hacer_cuadrada(images[[1]])
+foto_cuadrada <- hacer_cuadrada(images[[5]])
 #foto_cuadrada<-foto_cuadrada[1:4096, 1000:5095,]
 EBImage::display(Image(foto_cuadrada, colormode = 'Color'), method = 'r', title = 'Imagen cuadrada')
 ```
