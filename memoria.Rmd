@@ -200,9 +200,12 @@ NOISE_TYPES <- list(
     }
   )
 )
+```
 
+
+```{r, fig.height = 4}
 # Función para añadir ruido a una imagen
-add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
+add_noise_to_image <- function(image_name, noise_type, noise_params = list(), plot = FALSE) {
   # Verificar si la imagen existe en la lista
   if (!image_name %in% names(images)) {
     stop("La imagen con este nombre no se encuentra en la lista 'images'")
@@ -234,12 +237,15 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
     dim = dim(image_array)
   )
 
-  # Visualizar
+ # Visualizar si se ha indicado
+  if (plot == TRUE){
   layout(matrix(1:2, 1, 2))
   plot(Image(original_image, colormode = "Color"))
   title("Original")
   plot(Image((noisy_image_array), colormode = "Color"))
-  title(paste("Ruido:", noise_type))
+  title(paste("Ruido:", noise_type))}
+  
+  return(noisy_image_array)
 }
 
 # Aplicar los diferentes tipos de ruido a cada imagen
