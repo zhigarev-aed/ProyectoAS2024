@@ -64,32 +64,35 @@ rm (list=ls())
 
 # Desarrollo y resultados
 
+
 Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 ```{r, message = FALSE}
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim,EBImage, stringr,jpeg )
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind)
 ```
 
 Comenzamos cargando y visualizando las fotografías a emplear.
 ```{r}
-images_path <- list.files('./fotos', full.names = TRUE)
+images_path <- list.files("./fotos", full.names = TRUE)
 
-nombres_images <- str_remove_all(string = str_remove_all(string = images_path, pattern= './fotos/'), pattern='\\.JPG|\\.jpg')
+nombres_images <- str_remove_all(string = str_remove_all(string = images_path, pattern = "./fotos/"), pattern = "\\.JPG|\\.jpg")
 
 images <- lapply(images_path, readJPEG) # Cargamos las imágenes
+
+# Nota: cambie de load.image a readJPEG pq asi ya no hace falta usar el drop para quitar lo de cimg, sale bien directamente
 names(images) <- nombres_images
 ```
 
 ```{r}
-
 # Rotamos algunas de las fotos para una visualización más uniforme
-fotos_a_girar <- c('1','2','3','4')
-images_rotadas <- lapply(images[fotos_a_girar], aperm, perm=c(2,1,3))
+fotos_a_girar <- c("1", "2", "3", "4")
+images_rotadas <- lapply(images[fotos_a_girar], aperm, perm = c(2, 1, 3))
 
 
-for (i in fotos_a_girar){
-  images_rotadas[[i]]<images_rotadas[[i]][dim(images_rotadas[[i]])[1]:1,,]}
+for (i in fotos_a_girar) {
+  images_rotadas[[i]] < images_rotadas[[i]][dim(images_rotadas[[i]])[1]:1, , ]
+}
 
 images[fotos_a_girar] <- images_rotadas
 rm(images_rotadas)
@@ -97,11 +100,199 @@ rm(fotos_a_girar)
 ```
 
 
+```{r}
+# Visualizamos las imagenes originales (comento para que no tarde en ejecutar)
+
+#par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
+
+# for (img in nombres_images) {
+#   display(Image(images[[img]], colormode = "Color"), method = "r")
+# }
+```
+
 ## Inclusión de ruido sintético en las imágenes
+
+```{r, fig.height = 4}
+# Definición de tipos de ruido
+
+NOISE_TYPES <- list(
+  gaussian = list(
+    generator = function(channel, params) {
+      # Desviación estándar del ruido con un valor predeterminado
+      noise_std_dev <- params$std_dev %||% 0.5
+
+      # Generación de ruido gaussiano
+      noise <- array(
+        rnorm(length(channel), mean = 0, sd = noise_std_dev),
+        dim = dim(channel)
+      )
+
+      # Asegurar que los valores estén entre 0 y 1
+      pmax(0, pmin(1, channel + noise))
+    }
+  ),
+  sinusoidal_high = list(
+    generator = function(channel, params) {
+      # Frecuencia y amplitud del ruido sinusoidal de alta frecuencia
+      frequency <- params$frequency %||% 25
+      amplitude <- params$amplitude %||% 0.2
+
+      # Generación de ruido sinusoidal
+      height <- dim(channel)[1]
+      width <- dim(channel)[2]
+      x <- seq(0, 2 * pi, length.out = width)
+      y <- seq(0, 2 * pi, length.out = height)
+      noise_grid <- outer(sin(x * frequency), sin(y * frequency))
+
+      # Aplicar el ruido
+      noise <- array(noise_grid * amplitude, dim = dim(channel))
+      pmax(0, pmin(1, channel + noise))
+    }
+  ),
+  sinusoidal_low = list(
+    generator = function(channel, params) {
+      # Frecuencia y amplitud del ruido sinusoidal de baja frecuencia
+      frequency <- params$frequency %||% 2
+      amplitude <- params$amplitude %||% 0.2
+
+      # Generación de ruido sinusoidal
+      height <- dim(channel)[1]
+      width <- dim(channel)[2]
+      x <- seq(0, 2 * pi, length.out = width)
+      y <- seq(0, 2 * pi, length.out = height)
+      noise_grid <- outer(sin(x * frequency), sin(y * frequency))
+
+      # Aplicar el ruido
+      noise <- array(noise_grid * amplitude, dim = dim(channel))
+      pmax(0, pmin(1, channel + noise))
+    }
+  ),
+  salt_pepper = list(
+    generator = function(channel, params) {
+      # Proporción de píxeles afectados por el ruido de sal y pimienta
+      epsilon <- params$epsilon %||% 0.2
+
+      # Generación de ruido
+      noise <- matrix(sample(c(0, 1, NA), length(channel), replace = TRUE, prob = c(epsilon / 2, epsilon / 2, 1 - epsilon)),
+        nrow = dim(channel)[1], ncol = dim(channel)[2]
+      )
+      channel[!is.na(noise)] <- noise[!is.na(noise)]
+      channel
+    }
+  ),
+  gamma = list(
+    generator = function(channel, params) {
+      # Ruido multiplicativo gamma con parámetro de dispersión
+      looks <- params$looks %||% 2
+      noise <- array(rgamma(length(channel), shape = looks, scale = 1 / looks), dim = dim(channel))
+      pmax(0, pmin(1, channel * noise))
+    }
+  ),
+  uniform_multiplicative = list(
+    generator = function(channel, params) {
+      # Ruido multiplicativo uniforme
+      looks <- params$looks %||% 2
+      noise_channel <- SpatialPack::imnoise(
+        img = channel,
+        type = "speckle",
+        looks = looks
+      )
+      pmax(0, pmin(1, noise_channel))
+    }
+  )
+)
+```
+
+
+```{r, fig.height = 4}
+# Función para añadir ruido a una imagen
+add_noise_to_image <- function(image_name, noise_type, noise_params = list(), plot = FALSE) {
+  # Verificar si la imagen existe en la lista
+  if (!image_name %in% names(images)) {
+    stop("La imagen con este nombre no se encuentra en la lista 'images'")
+  }
+
+  # Verificar el tipo de ruido
+  if (!noise_type %in% names(NOISE_TYPES)) {
+    stop(
+      "El tipo de ruido es desconocido. Tipos disponibles: ",
+      paste(names(NOISE_TYPES), collapse = ", ")
+    )
+  }
+
+  # Obtener la imagen original de la lista
+  original_image <- images[[image_name]]
+
+  # Convertir la imagen a un array si es necesario
+  image_array <- as.array(original_image)
+
+  # Aplicar ruido a cada canal
+  noisy_channels <- lapply(1:3, function(i) {
+    channel <- image_array[, , i]
+    NOISE_TYPES[[noise_type]]$generator(channel, noise_params)
+  })
+
+  # Crear la imagen con ruido
+  noisy_image_array <- array(
+    unlist(noisy_channels),
+    dim = dim(image_array)
+  )
+
+  # Visualizar si se ha indicado
+  if (plot == TRUE){
+  layout(matrix(1:2, 1, 2))
+  plot(Image(original_image, colormode = "Color"))
+  title("Original")
+  plot(Image((noisy_image_array), colormode = "Color"))
+  title(paste("Ruido:", noise_type))}
+  
+  return(noisy_image_array)
+}
+```
+
+
+```{r, fig.height = 4}
+# Aplicar los diferentes tipos de ruido a cada imagen
+# add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+# add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+# add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
+# add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+# add_noise_to_image("5", "gamma", list(looks = 2))
+# add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+```
+
+
+## Función imwd
+
+## Función denoise...
+
+# Conclusiones
+
 
 ## Función imwd
 
 Como ya se ha visto (INCLUIR!!!!!!) para poder aplicar la función `imwd()`es necesario partir de una matriz cuadrada cuyas dimensiones sean potencia de dos. Por ello, en primer lugar creamos una función `recortar_imwd()` tal que dada una foto busca la submatriz cuadrada y potencia de dos más grande y a continuacón recorta la imagen a dicha submatriz cuadrada centrándola.
+
+```{r}
+# Añadimos ruido a imágnes
+image_1_gaussian_noise <- add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+image_2_sinosuidal_high <- add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+image_3_sinosoidal_low <- add_noise_to_image("3", "sinusoidal_low", list(frequency = 5, amplitude = 0.2))
+image_4_salt_pepper <- add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+image_5_gamma <- add_noise_to_image("5", "gamma", list(looks = 2))
+# add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+
+
+# Hacemos una lista con las imágenes con ruido a recortar
+images_for_imwd_cut <- list(image_1_gaussian_noise, image_2_sinosuidal_high, image_3_sinosoidal_low, image_5_gamma)
+names(images_for_imwd_cut) <- c('1 Noise: gaussian', '2 Noise: sinusoidal high', '3 Noise: sinusoidal low','5 Noise: gamma')
+
+# Eliminamos variables innecesarias
+rm(image_1_gaussian_noise)
+rm(image_2_sinosuidal_high)
+rm(image_3_sinosoidal_low)
+rm(image_5_gamma)
+```
 
 ```{r}
 # Pre-procesamiento al aplicado de función imwd (algoritmo de Mallat).
@@ -135,8 +326,8 @@ recortar_imwd<- function(foto){
   }
   
   # Calculo de los indices finales
-  filas_end <- filas_begin + lado_potencia2
-  col_end <- col_begin + lado_potencia2
+  filas_end <- filas_begin + lado_potencia2 -1
+  col_end <- col_begin + lado_potencia2 -1
 
 # Extraer la submatriz cuadrada centrada
 foto_cuadrada_centrada <- foto[filas_begin:filas_end, col_begin:col_end, ]
@@ -146,16 +337,88 @@ return(foto_cuadrada_centrada)
 ```
 
 ```{r}
-images_recortadas <- lapply(images, recortar_imwd)
+images_recortadas <- lapply(images_for_imwd_cut, recortar_imwd)
 ```
 
 ```{r}
-# Visualizamos las imágnes recortadas
-par(mfrow = c(2, 3), mar = c(1, 1, 1, 1)) 
+ # Visualizamos las imágnes recortadas
+# par(mfrow = c(2, 2), mar = c(1, 1, 1, 1))
+# 
+# for (img in names(images_recortadas)){
+# display(Image(images_recortadas[[img]], colormode = 'Color'), method='r')
+# }
+```
 
-for (img in nombres_images){
-  display(Image(images_recortadas[[img]], colormode = 'Color'), method='r')  
-} 
+
+```{r}
+# Transformada wavalet a las imágenes con ruido recortadas
+lwd <- lapply(images_recortadas, function(foto) { 
+  lapply(1:3, function(canal) {
+    wavethresh::imwd(foto[,,canal]) # Aplicamos la transformada wavelet a cada canal
+  })
+})
+
+```
+
+
+```{r}
+# Aplicamos threshold. Parámetros elegidos:
+niveles <- 10
+type <- "hard"
+policy <- "universal"
+
+
+lwd_threshold <- lapply(lwd, 
+function(lwd){
+  lapply(1:3, function(canal){
+  wavethresh::threshold(lwd[[canal]], levels = 3:(niveles-1), type = type, policy = policy)
+  })
+})
+```
+
+
+```{r}
+# Transformada wavelet inversa
+ilwd <- lapply(lwd_threshold, function(foto) { 
+  lapply(1:3, function(canal) {
+    wavethresh::imwr(foto[[canal]]) # Aplicamos la transformada wavelet inversa a cada canal
+  })
+})
+
+```
+
+```{r}
+# Transformamos al formato origial (imagenes como matrices [n,m,3])
+ilwd_matriz <- lapply(ilwd, function(foto) {
+  abind::abind(foto[[1]], foto[[2]], foto[[3]], along = 3)
+})
+
+
+
+```
+
+```{r}
+ # Visualizamos las imágnes recortadas
+par(mfrow = c(2, 2), mar = c(1, 1, 1, 1))
+
+for (img in names(ilwd_matriz)){
+display(Image(ilwd_matriz[[img]], colormode = 'Color'), method='r')
+}
+```
+
+
+```{r}
+ # Visualizamos las imágenes sin ruido
+
+ layout(matrix(1:length(ilwd), nrow = 2, ncol = 2))
+  plot(Image(ilwd_matriz[[1]], colormode = "Color"))
+  title("Original")
+  plot(Image(ilwd_matriz[[2]], colormode = "Color"))
+  title(paste("Ruido:"))
+    plot(Image(ilwd_matriz[[3]], colormode = "Color"))
+  title(paste("Ruido:"))
+    plot(Image(ilwd_matriz[[4]], colormode = "Color"))
+  title(paste("Ruido:"))
 ```
 
 
