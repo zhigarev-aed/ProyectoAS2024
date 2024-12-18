@@ -202,7 +202,7 @@ NOISE_TYPES <- list(
 )
 
 # Función para añadir ruido a una imagen
-add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
+add_noise_to_image <- function(image_name, noise_type, noise_params = list(),plot=FALSE) {
   # Verificar si la imagen existe en la lista
   if (!image_name %in% names(images)) {
     stop("La imagen con este nombre no se encuentra en la lista 'images'")
@@ -234,13 +234,21 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
     dim = dim(image_array)
   )
 
-  # Visualizar
-  #layout(matrix(1:2, 1, 2))
-  #plot(Image(original_image, colormode = "Color"))
-  #title("Original")
-  #plot(Image((noisy_image_array), colormode = "Color"))
-  #title(paste("Ruido:", noise_type))
+ # Visualizar si se ha indicado
+  if (plot == TRUE){
+  layout(matrix(1:2, 1, 2))
+  plot(Image(original_image, colormode = "Color"))
+  title("Original")
+  plot(Image((noisy_image_array), colormode = "Color"))
+  title(paste("Ruido:", noise_type))}
+  
+  return(noisy_image_array)
 }
+
+```
+
+
+```{r}
 
 # Aplicar los diferentes tipos de ruido a cada imagen
 #add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
@@ -253,40 +261,41 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
 
 
 ## Función imwd
-Cargar los ruidos 
 
-```{r}
-gaussian_noise_1<-add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
-sinosuidal_high_noise_2<-add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
-sinosuidal_low_noise_3<-add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
-salt_pepper_noise_4<-add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+```{r,echo=FALSE}
+# agregar ruido a imagenes
+gaussian_noise_5<-add_noise_to_image("5", "gaussian", list(std_dev = 0.5))
 gamma_noise_5<-add_noise_to_image("5", "gamma", list(looks = 2))
 unif_noise_5<-add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
 ```
 
 
 
-```{r}
-imagen_noise <- list(gaussian_noise_1, sinosuidal_high_noise_2, sinosuidal_low_noise_3)
-names(imagen_noise) <- c('1 Noise: gaussian', '2 Noise: sinusoidal high', '3 Noise: sinusoidal low')
+```{r,echo=FALSE}
+#probar con 3 
+imagen_noise <- list(gaussian_noise_5, gamma_noise_5, unif_noise_5)
+names(imagen_noise) <- c('1 Noise: gaussian', '2 Noise: gamma', '3 Noise: unif')
 
 ```
 
 
-Función para hacer cuadrada la imagen.
+**Función para hacer cuadrada la imagen.**
+
+Para aplicar el algoritmo de Deformación Iterativa de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo.
+
+A continuación, se presenta una función de pre-procesamiento, que ajusta cualquier imagen rectangular a un tamaño cuadrado, manteniendo sus proporciones originales al agregar relleno (fondo blanco) si es necesario. Esta transformación asegura que la imagen sea compatible con el algoritmo IMWD.
+
 ```{r}
-hacer_cuadrada <- function(imagen) {
-  # Obtener las dimensiones de la imagen original
+hacer_cuadrada_potencia_2 <- function(imagen) {
   n_filas <- dim(imagen)[1]
   n_columnas <- dim(imagen)[2]
   
-  # Calcular el tamaño de la nueva imagen cuadrada
   nuevo_tamano <- max(n_filas, n_columnas)
   
-  # Crear una matriz de ceros de tamaño cuadrado
-  imagen_cuadrada <- array(0, dim = c(nuevo_tamano, nuevo_tamano, 3))
+  siguiente_potencia_2 <- 2^ceiling(log2(nuevo_tamano))
   
-  # Copiar la imagen original en la parte superior izquierda de la nueva imagen
+  imagen_cuadrada <- array(0, dim = c(siguiente_potencia_2, siguiente_potencia_2, dim(imagen)[3])) 
+  
   imagen_cuadrada[1:n_filas, 1:n_columnas, ] <- imagen
   
   return(imagen_cuadrada)
@@ -298,17 +307,78 @@ hacer_cuadrada <- function(imagen) {
 Cargar imagenes en la función cuadrada
 
 
-```{r}
-#foto_cuadrada <- hacer_cuadrada(images[[5]])
-foto_cuadrada <- hacer_cuadrada(gaussian_noise_1)
 
-#foto_cuadrada<-foto_cuadrada[1:4096, 1000:5095,]
-EBImage::display(Image(foto_cuadrada, colormode = 'Color'), method = 'r', title = 'Imagen cuadrada')
+Aplicamos la función en 3 fotos
+```{r}
+fotos_cuadradas <- lapply(imagen_noise, hacer_cuadrada_potencia_2)
+```
+
+```{r}
+i=5
+EBImage::display(Image(images[[i]], colormode = 'Color'), method = 'r')
+
+```
+
+
+
+```{r}
+for(i in c(1:3)){
+print(names(fotos_cuadradas)[i])
+EBImage::display(Image(fotos_cuadradas[[i]], colormode = 'Color'), method = 'r')
+}
 ```
 
 ```{r}
 
+# no es tan buena idea, solo probamos con 2 fotos 
+#Error: vector memory limit of 16.0 Gb reached, see mem.maxVSize()
 ```
+
+El umbral "universal", propuesta por Donoho y Johnstone, es un método utilizado en la eliminación de ruido en señales e imágenes mediante transformadas de wavelet. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log n}$$donde $$ \sigma$$ es una estimación del ruido y n es el número de muestras o elementos de la señal.
+
+
+
+
+```{r}
+procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
+  lwd <- lapply(1:3, function(canal) {
+    wavethresh::imwd(foto[,,canal])  
+  })
+  
+  # 2. Aplicamos el umbral a los coeficientes de la transformada wavelet
+  lwd_threshold <- lapply(lwd, function(canal_wd) {
+    niveles <- canal_wd$nlevels
+    wavethresh::threshold(canal_wd, levels = 3:(niveles-1), type = tipo, policy = policy)
+  })
+  
+  # 3. Aplicamos la transformada wavelet inversa a cada canal umbralizado
+  ilwd <- lapply(lwd_threshold, function(canal_umbralizado) {
+    wavethresh::imwr(canal_umbralizado)  # Transformada wavelet inversa
+  })
+  
+  # 4. Reconstruir la imagen combinando los tres canales procesados
+  imagen_reconstruida <- abind::abind(ilwd[[1]], ilwd[[2]], ilwd[[3]], along = 3)
+  
+  # Convertimos la imagen reconstruida en un objeto 'Image' de EBImage
+  imagen <- Image(imagen_reconstruida, colormode = 'Color')
+  
+  return(imagen)
+}
+
+```
+
+
+```{r,echo=FALSE}
+#mem.maxVSize(32 * 1024^3) 
+for(i in c(1:3)){
+prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal") 
+print(names(fotos_cuadradas)[i])
+EBImage::display(prueba, method = 'r', title = 'Imagen Wavelet sin ruido')
+}
+```
+
+
+
 
 
 
