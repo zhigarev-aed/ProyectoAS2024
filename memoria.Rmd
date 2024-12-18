@@ -235,24 +235,43 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list()) {
   )
 
   # Visualizar
-  layout(matrix(1:2, 1, 2))
-  plot(Image(original_image, colormode = "Color"))
-  title("Original")
-  plot(Image((noisy_image_array), colormode = "Color"))
-  title(paste("Ruido:", noise_type))
+  #layout(matrix(1:2, 1, 2))
+  #plot(Image(original_image, colormode = "Color"))
+  #title("Original")
+  #plot(Image((noisy_image_array), colormode = "Color"))
+  #title(paste("Ruido:", noise_type))
 }
 
 # Aplicar los diferentes tipos de ruido a cada imagen
-add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
-add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
-add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
-add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
-add_noise_to_image("5", "gamma", list(looks = 2))
-add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+#add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+#add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+#add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
+#add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+#add_noise_to_image("5", "gamma", list(looks = 2))
+#add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
 ```
 
 
 ## Función imwd
+Cargar los ruidos 
+
+```{r}
+gaussian_noise_1<-add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+sinosuidal_high_noise_2<-add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+sinosuidal_low_noise_3<-add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
+salt_pepper_noise_4<-add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+gamma_noise_5<-add_noise_to_image("5", "gamma", list(looks = 2))
+unif_noise_5<-add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+```
+
+
+
+```{r}
+imagen_noise <- list(gaussian_noise_1, sinosuidal_high_noise_2, sinosuidal_low_noise_3)
+names(imagen_noise) <- c('1 Noise: gaussian', '2 Noise: sinusoidal high', '3 Noise: sinusoidal low')
+
+```
+
 
 Función para hacer cuadrada la imagen.
 ```{r}
@@ -280,11 +299,16 @@ Cargar imagenes en la función cuadrada
 
 
 ```{r}
-foto_cuadrada <- hacer_cuadrada(images[[5]])
+#foto_cuadrada <- hacer_cuadrada(images[[5]])
+foto_cuadrada <- hacer_cuadrada(gaussian_noise_1)
+
 #foto_cuadrada<-foto_cuadrada[1:4096, 1000:5095,]
 EBImage::display(Image(foto_cuadrada, colormode = 'Color'), method = 'r', title = 'Imagen cuadrada')
 ```
 
+```{r}
+
+```
 
 
 
