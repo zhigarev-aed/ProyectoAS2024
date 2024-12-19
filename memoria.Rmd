@@ -4,15 +4,15 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     echo: true
     number_sections: true
     theme: lumen
     toc: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
@@ -313,7 +313,9 @@ Aplicamos la función en 3 fotos
 fotos_cuadradas <- lapply(imagen_noise, hacer_cuadrada_potencia_2)
 ```
 
-```{r}
+Imagen Original
+
+```{r,echo=FALSE}
 i=5
 EBImage::display(Image(images[[i]], colormode = 'Color'), method = 'r')
 
@@ -321,25 +323,25 @@ EBImage::display(Image(images[[i]], colormode = 'Color'), method = 'r')
 
 
 
-```{r}
+```{r,echo=FALSE}
 for(i in c(1:3)){
 print(names(fotos_cuadradas)[i])
+print(' ')
 EBImage::display(Image(fotos_cuadradas[[i]], colormode = 'Color'), method = 'r')
 }
 ```
 
-```{r}
-
-# no es tan buena idea, solo probamos con 2 fotos 
-#Error: vector memory limit of 16.0 Gb reached, see mem.maxVSize()
-```
-
-El umbral "universal", propuesta por Donoho y Johnstone, es un método utilizado en la eliminación de ruido en señales e imágenes mediante transformadas de wavelet. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log n}$$donde $$ \sigma$$ es una estimación del ruido y n es el número de muestras o elementos de la señal.
+Cuando uso fotos de mayor calidad solo acepta hasta 2, con 3 aparece esto:
+Error: vector memory limit of 16.0 Gb reached, see mem.maxVSize()
 
 
 
+El umbral "universal", propuesta por Donoho y Johnstone, es un método utilizado en la eliminación de ruido en señales e imágenes mediante transformadas de wavelet. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log n}$$ donde $\sigma$ es una estimación del ruido y n es el número de muestras o elementos de la señal.
 
-```{r}
+
+
+
+```{r,echo=FALSE}
 procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
   lwd <- lapply(1:3, function(canal) {
     wavethresh::imwd(foto[,,canal])  
@@ -367,17 +369,60 @@ procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
 
 ```
 
-
+**Imagenes sin ruido**
 ```{r,echo=FALSE}
 #mem.maxVSize(32 * 1024^3) 
 for(i in c(1:3)){
-prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal") 
+prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal")
 print(names(fotos_cuadradas)[i])
 EBImage::display(prueba, method = 'r', title = 'Imagen Wavelet sin ruido')
 }
 ```
 
 
+
+
+
+*Ruido gaussiano*
+```{r,echo=FALSE}
+library(magick)
+prueba<-procesar_imagen_wavelet(fotos_cuadradas[[1]], tipo = "hard", policy = "universal")
+img_raster <- as.raster(prueba)
+img_magick <- image_read(img_raster)
+
+```
+
+
+Imagen con ruido Gaussiano original
+
+1. Imagen Cortada sin filtro
+
+2. Ajusta el contraste de la imagen, incrementando la diferencia entre los píxeles claros y oscuros.
+
+3. Imagen con filtro paso alto
+
+
+```{r,echo=FALSE}
+imagen_cortada<-image_crop(img_magick, "1300x1200")
+
+kernel_paso_alto<-matrix(c(0,-1,0,-1,5,-1,0,-1,0),nrow=3,ncol=3)
+
+filtrada_alto<-image_convolve(imagen_cortada,kernel_paso_alto)
+
+concontraste<-image_contrast(imagen_cortada)
+
+imagen_cortada <- image_annotate(imagen_cortada, "Imagen Cortada", size = 50, color = "white", location = "+10+10")
+concontraste <- image_annotate(concontraste, "Con Contraste", size = 50, color = "white", location = "+10+10")
+filtrada_alto <- image_annotate(filtrada_alto, "Filtrada Alto", size = 50, color = "white", location = "+10+10")
+
+# Combinar las imágenes horizontalmente
+imagen_combinada <- image_append(c(imagen_cortada, concontraste, filtrada_alto))
+
+EBImage::display(Image(fotos_cuadradas[[1]], colormode = 'Color'), method = 'r')
+
+# Mostrar la imagen combinada
+print(imagen_combinada)
+```
 
 
 
