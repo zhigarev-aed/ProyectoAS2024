@@ -99,15 +99,7 @@ rm(fotos_a_girar)
 ```
 
 
-```{r}
-# Visualizamos las imagenes originales
 
-par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
-
-for (img in nombres_images) {
-  display(Image(images[[img]], colormode = "Color"), method = "r")
-}
-```
 
 ## Inclusión de ruido sintético en las imágenes
 
@@ -263,7 +255,41 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(),plo
 ## Función imwd
 El uso de la Transformada Discreta de Wavelet (DWT) permite separar las frecuencias bajas de las frecuencias altas (que suelen contener el ruido).
 
-Para aplicar el algoritmo de Deformación Iterativa de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo.
+Se aplica la DWT en una imagen \( f(x, y) \) de tamaño \( M \times N \) con filtros paso-bajo y paso-alto en cada dimensión:
+
+- \( H_1 \) y \( H_2 \) son los filtros paso-bajo y paso-alto en la dirección horizontal, respectivamente.
+- \( V_1 \) y \( V_2 \) son los filtros paso-bajo y paso-alto en la dirección vertical.
+
+La DWT se descompone en cuatro sub-imágenes:
+
+1. **Aproximación (LL):** Resultado de aplicar los filtros \( H_1 \) y \( V_1 \). Contiene las bajas frecuencias de la imagen, es decir, la versión suavizada de la imagen.
+   
+2. **Horizontal (LH):** Resultado de aplicar \( H_1 \) y \( V_2 \). Captura detalles horizontales, como bordes verticales.
+
+3. **Vertical (HL):** Resultado de aplicar \( H_2 \) y \( V_1 \). Captura detalles verticales, como bordes horizontales.
+
+4. **Diagonal (HH):** Resultado de aplicar \( H_2 \) y \( V_2 \). Captura detalles diagonales, como bordes inclinados y ruido.
+
+La DWT 2D se expresa matemáticamente como:
+
+$$
+f_{LL}(x, y) = H_1(f(x, y)) * V_1(f(x, y))
+$$
+
+$$
+f_{LH}(x, y) = H_1(f(x, y)) * V_2(f(x, y))
+$$
+
+$$
+f_{HL}(x, y) = H_2(f(x, y)) * V_1(f(x, y))
+$$
+
+$$
+f_{HH}(x, y) = H_2(f(x, y)) * V_2(f(x, y))
+$$
+
+
+Para aplicar el algoritmo de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo.
 
 
 
@@ -310,7 +336,7 @@ hacer_cuadrada_potencia_2 <- function(imagen) {
 
 **Cargar imagenes en la función cuadrada**
 
-Elegimos la foto con menor resolución porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas. Se aplican distintos ruidos a la  misma imagen, mostramos un ejemplo de la foto con ruido gaussiano.
+Se elige la foto con menor resolución porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
 
 ```{r,echo=FALSE}
 fotos_cuadradas <- lapply(imagen_noise, hacer_cuadrada_potencia_2)
@@ -318,15 +344,54 @@ fotos_cuadradas <- lapply(imagen_noise, hacer_cuadrada_potencia_2)
 
 
 ```{r,echo=FALSE}
-for(i in c(1)){
+par(mfrow = c(1, 2))  # 1 fila, 2 columnas
+
+# Mostrar la foto original
+foto_original<-hacer_cuadrada_potencia_2(images[[5]])
+
+EBImage::display(Image(foto_original, colormode = 'Color'), method = 'r')
+mtext("Imagen aumentada en potencia 2", side = 3, line = 1.5, cex = 1)
+
+i=1
+
 EBImage::display(Image(fotos_cuadradas[[i]], colormode = 'Color'), method = 'r')
-mtext(names(fotos_cuadradas)[i], side = 3, line = 3.2, cex = 1)
-}
+mtext(names(fotos_cuadradas)[i], side = 3, line = 1.5, cex = 1)
+
+#par(mfrow = c(1, 1))
+
 ```
 
 
-El umbral "universal", propuesta por Donoho y Johnstone, es un método utilizado en la eliminación de ruido en señales e imágenes mediante transformadas de wavelet. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log n}$$ donde $\sigma$ es una estimación del ruido y n es el número de muestras o elementos de la señal.
+### Umbral Universal
 
+El umbral "universal", propuesta por Donoho y Johnstone. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. Este enfoque tiene como objetivo establecer un umbral de manera que se eliminen los coeficientes de wavelet que corresponden al ruido, mientras se conservan aquellos que contienen la señal significativa.
+La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log nd}$$ donde $\sigma$ es una estimación del ruido y *nd* es el número de coeficientes en la subbanda de detalles correspondiente a un nivel de la transformada wavelet. Este valor se obtiene accediendo a los coeficientes de la subbanda D de cada nivel.
+
+### Umbral FDR
+
+La tasa de falsos positivos (FDR) es una técnica estadística utilizada para controlar la tasa de falsos positivos en el proceso de selección de coeficientes relevantes, tal como se describe en el trabajo de Abramovich y Benjamini (1996). En el contexto de la reducción de ruido mediante la Transformada Wavelet, el objetivo principal de FDR es identificar y eliminar los coeficientes asociados al ruido, mientras se preservan aquellos que contienen información significativa, como bordes, texturas o detalles importantes de la imagen. Esto se logra calculando, para cada coeficiente de la transformada, la probabilidad de que dicho coeficiente sea un falso positivo, es decir, que corresponda a ruido pero sea erróneamente considerado relevante.
+
+**Metodología**
+
+Una vez estimado el nivel de ruido, se calcula para cada coeficiente de wavelet la probabilidad \( p \) de que ese coeficiente sea ruido, utilizando la fórmula:
+
+\[
+p = 2 \left( 1 - \Phi \left( \frac{|d|}{\text{noise.level}} \right) \right)
+\]
+
+donde:
+
+\( |d| \) es el valor absoluto del coeficiente \( d \) de la subbanda de detalles.
+
+\( \text{noise.level} \) es la desviación estándar de los coeficientes de esa subbanda.
+
+\( \Phi \) es la función de distribución acumulada de la normal estándar, que nos da la probabilidad de que un valor \( d \) dado provenga del ruido (asumido como una distribución normal).
+
+**Umbralización según FDR**
+
+El valor calculado de \( p \) da una medida de la probabilidad de que un coeficiente sea ruido. A continuación, se define un umbral para la tasa de descubrimientos falsos, denotada por \( Q \), que establece el límite máximo aceptable para la probabilidad de falso positivo. Con un \( Q = 0.05 \), esto significa que se permitirá un máximo del 5% de coeficientes de ruido que se consideren erróneamente relevantes.
+
+Los coeficientes cuya probabilidad \( p \) sea mayor que el umbral calculado se eliminan (se consideran ruido y se establecen a cero), mientras que aquellos con \( p \) menor que el umbral se conservan, ya que se consideran significativos (es decir, pertenecen a la señal de la imagen).
 
 
 ```{r,echo=FALSE}
@@ -355,138 +420,189 @@ procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
 ```
 
 
-**Imagenes sin ruido**
-Se presentan las imagenes sin ruido 
-```{r,echo=FALSE}
-
-for(i in c(1:5)){
-prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal")
-EBImage::display(prueba[1:1600,1:1000,], method = 'r', title = 'Imagen Wavelet sin ruido')
-mtext(names(fotos_cuadradas)[i], side = 3, line = 3.2, cex = 1)
-
-}
-```
-
-**Imagenes sin ruido**
-Se presentan las imagenes sin ruido otros parametros
-```{r}
-library(EBImage)
-
-# Configurar el tamaño de las imágenes más pequeñas
-nuevo_alto <- 300   # Nuevo alto de la imagen
-nuevo_ancho <- 300  # Nuevo ancho de la imagen
-
-par(mfrow = c(1, 5), mar = c(4, 4, 1, 1))  # Ajusta los márgenes si es necesario
-
-for(i in c(1:5)) {
-  # Procesar la imagen con wavelet
-  prueba <- procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
-  
-  # Redimensionar la imagen
-  prueba_redimensionada <- resize(prueba[1:1600, 1:1000, ], nuevo_alto, nuevo_ancho)
-  
-  # Mostrar la imagen redimensionada
-  EBImage::display(prueba_redimensionada, method = 'r', title = 'Imagen Wavelet sin ruido')
-  
-  # Agregar el nombre de la imagen como título
-  mtext(names(fotos_cuadradas)[i], side = 3, line = 0.5, cex = 1)
-}
-
-# Restaurar el parámetro de la ventana gráfica
-par(mfrow = c(1, 1)) 
-```
-
-
-
-
 
 ```{r,echo=FALSE}
 
+#for(i in c(1:5)){
+#prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = #"universal")
+#EBImage::display(prueba[1:1600,1:1000,], method = 'r', title = 'Imagen Wavelet sin #ruido')
+#mtext(names(fotos_cuadradas)[i], side = 3, line = 3.2, cex = 1)
 
-for(i in c(1:5)){
-prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
-EBImage::display(prueba[1:1600,1:1000,], method = 'r', title = 'Imagen Wavelet sin ruido')
-mtext(names(fotos_cuadradas)[i], side = 3, line = 3.2, cex = 1)
-
-}
-```
-
-```{r}
-for(i in c(1)){
-prueba<-Image(fotos_cuadradas[[i]], colormode = 'Color')
-EBImage::display(prueba[1:1600,1:1000,], method = 'r')
-mtext(names(fotos_cuadradas)[i], side = 3, line = 3.2, cex = 1)
-
-prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal")
-EBImage::display(prueba[1:1600,1:1000,], method = 'r', title = 'Imagen Wavelet sin ruido')
-mtext(paste0('universal, Without ',names(fotos_cuadradas)[i]), side = 3, line = 3.2, cex = 1)
-
-prueba<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
-EBImage::display(prueba[1:1600,1:1000,], method = 'r', title = 'Imagen Wavelet sin ruido')
-mtext(paste0('fdr, Without ',names(fotos_cuadradas)[i]), side = 3, line = 3.2, cex = 1)
-
-}
+#}
 ```
 
 
-*Ruido gaussiano*
 ```{r,echo=FALSE}
-for(i in c(1:5)){
-ruido1<-Image(fotos_cuadradas[[i]], colormode = 'Color')
+suppressMessages(library(EBImage))
+
+library(magick)
+imprimir<-function(i){
+# Crear la imagen original (con ruido)
+ruido1 <- Image(fotos_cuadradas[[i]], colormode = 'Color')
 img_raster <- as.raster(ruido1)
 img_magick1 <- image_read(img_raster)
 
+# Recortar la imagen a 1300x1200 desde la esquina superior izquierda
+img_magick1_recortada <- image_crop(img_magick1, "1600x1060+10+10")
 
-ruido1_universal<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal")
+# Dibujar el título sobre la imagen recortada
+img_magick1_recortada <- image_draw(img_magick1_recortada)
+text(x = 220, y = 20, labels = paste0(names(fotos_cuadradas)[i]), col = "white", cex = 4)  # Ajusta la posición y el tamaño
+dev.off()  # Termina de dibujar en la imagen
+
+# Puedes continuar con el mismo proceso para las otras imágenes
+# Recortar las imágenes procesadas y añadirles títulos
+
+ruido1_universal <- procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "universal")
 img_raster <- as.raster(ruido1_universal)
 img_magick2 <- image_read(img_raster)
 
-ruido1_fdr<-procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
+# Recortar la imagen procesada
+img_magick2_recortada <- image_crop(img_magick2, "1600x1060+10+10")
+
+# Dibujar el título sobre la imagen recortada
+img_magick2_recortada <- image_draw(img_magick2_recortada)
+text(x = 220, y = 20, labels = "Wavelet - Universal", col = "white", cex = 4) 
+dev.off()
+
+ruido1_fdr <- procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
 img_raster <- as.raster(ruido1_fdr)
 img_magick3 <- image_read(img_raster)
 
-imagen_combinada <- image_append(c(img_magick1, img_magick2, img_magick3))
+# Recortar la imagen procesada
+img_magick3_recortada <- image_crop(img_magick3, "1600x1060+10+10")
 
-# Mostrar la imagen combinada
-print(imagen_combinada)
+# Dibujar el título sobre la imagen recortada
+img_magick3_recortada <- image_draw(img_magick3_recortada)
+text(x = 220, y = 20, labels = "Wavelet - FDR", col = "white", cex = 4) 
+dev.off()
 
+# Combinar las tres imágenes recortadas
+imagen_combinada_recortada <- image_append(c(img_magick1_recortada, img_magick2_recortada, img_magick3_recortada))
+
+# Mostrar la imagen combinada recortada
+return(imagen_combinada_recortada)
 }
 ```
 
+Se observa que el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal. Esto se debe a que el FDR estima la probabilidad de que un coeficiente de wavelet provenga del ruido, basándose en la distribución normal. Al asumir que el ruido sigue una distribución gaussiana, el FDR puede ajustar el umbral de manera más dinámica, lo que le permite identificar y eliminar los coeficientes ruidosos con mayor precisión, al tiempo que preserva los detalles relevantes de la imagen. En cambio, el umbral Universal utiliza un umbral fijo basado en el tamaño de la señal, lo que no captura completamente la variabilidad del ruido. Como resultado, el FDR podría ofrecer una eliminación de ruido más adaptativa, ayudando a preservar mejor los detalles de la imagen, aunque la diferencia en la práctica no siempre sea marcadamente significativa.
+
+Eliminar Ruido Gaussiano
+
+```{r,echo=FALSE}
+suppressMessages(imprimir(1))
+```
+
+                         
+Eliminar Ruido Sinusoidal high 
+
+```{r,echo=FALSE}
+suppressMessages(imprimir(2))
+```
+
+Eliminar Ruido Sinusoidal low 
+```{r,echo=FALSE}
+suppressMessages(imprimir(3))
+```
+
+Eliminar Ruido Salt and pepper 
+```{r,echo=FALSE}
+suppressMessages(imprimir(4))
+```
+
+Eliminar Ruido uniforme 
+```{r,echo=FALSE}
+suppressMessages(imprimir(5))
+```
 
 
+Eliminar  Ruido gamma 
+```{r,echo=FALSE}
+suppressMessages(imprimir(6))
+```
 
-
-Imagen con ruido Gaussiano original
-
-1. Imagen Cortada sin filtro
-
-2. Ajusta el contraste de la imagen, incrementando la diferencia entre los píxeles claros y oscuros.
-
-3. Imagen con filtro paso alto
 
 
 ```{r,echo=FALSE}
-imagen_cortada<-image_crop(img_magick, "1300x1200")
+library(magick)
 
-kernel_paso_alto<-matrix(c(0,-1,0,-1,5,-1,0,-1,0),nrow=3,ncol=3)
+imprimir_ajustes <- function(i) {
+  
+  # Crear la imagen original (con ruido)
+  ruido1 <- Image(fotos_cuadradas[[i]], colormode = 'Color')
+  img_raster <- as.raster(ruido1)
+  img_magick1 <- image_read(img_raster)
+  
+  # Recortar la imagen a 1600x1060 desde la esquina superior izquierda
+  img_magick1_recortada <- image_crop(img_magick1, "1600x1060+10+10")
+  
+  # Dibujar el título sobre la imagen recortada
+  img_magick1_recortada <- image_draw(img_magick1_recortada)
+  text(x = 200, y = 20, labels = paste0(names(fotos_cuadradas)[i]), col = "white", cex = 3.5)  
+  dev.off()  
+  
+  # Procesar imagen con filtro Wavelet FDR
+  ruido1_fdr <- procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
+  img_raster <- as.raster(ruido1_fdr)
+  img_magick3 <- image_read(img_raster)
+  img_magick3_recortada <- image_crop(img_magick3, "1600x1060+10+10")
+  img_magick_recortada <- image_crop(img_magick3, "1600x1060+10+10")
 
-filtrada_alto<-image_convolve(imagen_cortada,kernel_paso_alto)
+  # Dibujar título "Wavelet - FDR" sobre la imagen recortada
+  img_magick3_recortada <- image_draw(img_magick3_recortada)
+  text(x = 200, y = 20, labels = "Wavelet - FDR", col = "white", cex = 3.5)  
+  dev.off()  # Termina de dibujar en la imagen
+  
+  # Aplicar filtro de kernel paso alto
+  kernel_paso_alto <- matrix(c(0, -1, 0, -1, 5, -1, 0, -1, 0), nrow = 3, ncol = 3)
+  filtrada_alto <- image_convolve(img_magick_recortada, kernel_paso_alto)
+  
+  # Agregar título "Filtro Alto" sobre la imagen filtrada con el filtro de paso alto
+  filtrada_alto <- image_draw(filtrada_alto)
+  text(x = 200, y = 20, labels = "Filtro Alto", col = "white", cex = 3.5)  # Título "Filtro Alto"
+  dev.off()  # Termina de dibujar en la imagen
+  
+  # Aplicar contraste a la imagen
+  concontraste <- image_contrast(img_magick_recortada)
+  concontraste <- image_draw(concontraste)
+  text(x = 200, y = 20, labels = "Contraste", col = "white", cex = 3.5)  # Título "Filtro Alto"
+  dev.off() 
+  
+  # Combinar las tres imágenes (Wavelet, Filtro Alto, y Contraste)
+  imagen_combinada_recortada <- image_append(c(img_magick_recortada3, filtrada_alto, concontraste))
+  
+  # Mostrar la imagen combinada recortada
+  return(imagen_combinada_recortada)
+}
 
-concontraste<-image_contrast(imagen_cortada)
-
-imagen_cortada <- image_annotate(imagen_cortada, "Imagen Cortada", size = 50, color = "white", location = "+10+10")
-concontraste <- image_annotate(concontraste, "Con Contraste", size = 50, color = "white", location = "+10+10")
-filtrada_alto <- image_annotate(filtrada_alto, "Filtrada Alto", size = 50, color = "white", location = "+10+10")
-
-# Combinar las imágenes horizontalmente
-#imagen_combinada <- image_append(c(imagen_cortada, concontraste, filtrada_alto))
-
-#EBImage::display(Image(fotos_cuadradas[[1]], colormode = 'Color'), method = 'r')
-
-# Mostrar la imagen combinada
-#print(imagen_combinada)
 ```
+
+
+
+```{r,echo=FALSE}
+#suppressMessages(imprimir_ajustes(1))
+```
+
+```{r,echo=FALSE}
+#suppressMessages(imprimir_ajustes(2))
+```
+
+```{r,echo=FALSE}
+#suppressMessages(imprimir_ajustes(3))
+```
+
+```{r,echo=FALSE}
+#suppressMessages(imprimir_ajustes(4))
+```
+
+```{r,echo=FALSE}
+#suppressMessages(imprimir_ajustes(5))
+```
+
+```{r,echo=FALSE}
+#suppressMessages(imprimir_ajustes(6))
+```
+
 
 
 
