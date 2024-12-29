@@ -58,7 +58,21 @@ rm(list = ls())
 
 # Introducción
 
+En el campo del análisis de señales, uno de los problemas más relevantes es la eliminación de ruido en imágenes digitales. Las señales, que representan variaciones de magnitudes en el espacio y/o tiempo, a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
+
+El uso de wavelets es una herramienta clave para abordar este problema, el cual permite descomponer señales en sus componentes espaciales y frecuenciales de forma eficiente. Este método ofrece la posibilidad de adaptarse a las características particulares de cada tipo de ruido.
+
+En este trabajo se propone explorar la capacidad de los wavelets para la eliminación de ruido en imágenes digitales. Para ello, se generarán y analizarán diferentes tipos de ruido artificial, evaluando su complejidad para su atenuación y determinando los parámetros más eficaces de los wavelets.
+
 # Fundamento teórico: eliminación de ruido con wavelets
+
+Los wavelets son funciones matemáticas que permiten descomponer una señal en componentes de diferentes escalas, lo que resulta útil para identificar y procesar características específicas. Este enfoque es especialmente relevante en la eliminación de ruido, donde las frecuencias indeseadas pueden ser separadas y reducidas sin afectar significativamente las características principales de la señal original. A diferencia de la Transformada de Fourier, que opera globalmente y no ofrece información sobre la localización temporal de los eventos, los wavelets permiten un análisis localizado, facilitando la identificación de patrones y anomalías en los datos.
+
+El proceso de reducción de ruido con wavelets generalmente incluye tres etapas principales: la descomposición de la señal utilizando una wavelet madre, la modificación de los coeficientes wavelet mediante técnicas de umbral, y la reconstrucción de la señal. La selección de la wavelet madre adecuada y los parámetros de umbral son aspectos críticos que deben adaptarse a las características específicas del ruido y la señal.
+
+Además, los wavelets ofrecen un enfoque multi-resolución, permitiendo una representación detallada de los componentes de alta frecuencia, asociados frecuentemente con el ruido, mientras preservan las estructuras globales de baja frecuencia. Esta característica hace que los wavelets sean especialmente útiles en aplicaciones donde la precisión y la integridad de los datos son esenciales, como en imágenes médicas, procesamiento de audio o análisis de datos científicos.
+
+En este trabajo, se emplearán wavelets como herramienta principal para eliminar diferentes tipos de ruido sintético en imágenes.
 
 # Funciones de programacion empleadas
 
