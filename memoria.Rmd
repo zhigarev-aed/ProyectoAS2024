@@ -78,11 +78,39 @@ En este trabajo, se emplearán wavelets como herramienta principal para eliminar
 
 # Desarrollo y resultados
 
+# Fundamento teórico: eliminación de ruido con wavelets
+
+# Funciones de programacion empleadas
+
+
+**Eliminación de ruido con el algoritmo de Mallat**
+
+Empleamos la funicón `imwd()` del paquete wavethresh. Está función realiza una
+transformada discreta wavelet de acuerdo con el algoritmo de Mallat.
+
+- `imwd(image, filter.number=10, family="DaubLeAsymm", type="wavelet",...).`
+
+El argumento `image` de la función debe ser una matriz cuadrada cuya dimensión 
+sea potencia de dos.`filter.number` elige la suavidad de la wavelet a emplear, siendo por defecto 10. `family` indica la familia de wavelets a emplear ("DaubExPhase" ó "DaubLeAsymm").Para tratar las fronteras, mantendremos el parámetro `bc = "periodic"` por defecto.
+
+Para la eliminación de ruido aplicaremos la función `threshold()` al objeto que
+devuelve la función `imwd()`. 
+
+- `threshold(imwd, levels = 3:(nlevelsWT(imwd) - 1), type = "hard", policy = "universal", by.level = FALSE, value = 0, return.threshold = FALSE, compression = TRUE, Q = 0.05, ...)`
+
+`levels` es el número de niveles a los cuáles deseamos aplicar un umbral, mientras que `type` indica si queremos un umbral más suave ("soft") ó más fuerte ("hard"). El parámetro `policy` selecciona la técnica para elegir umbral. `by.level = FALSE` significa que se aplica un umbral global a todos los niveles indicados, mientras que `by.level = TRUE` calcular threshold para cada nivel por seaparado. El parámetro `value`, el valor del umbral, se usará si elegimos técnicas manuales en `policy`. Si queremos obtener el valor umbral aplicado, pondremos `return.threshold = TRUE`. Finalmente, dejaremos el parámetro `compression = TRUE` por defecto, para obterner un objeto más pequeño. 
+
+Durante el desarrollo del trabajo variaremos estos parámetros para observar su efecto en la eliminación de diversos tipos de ruido y encontar aquellos que generen un mejor resultado en cada caso. Una vez realizado el thresholding, emplearemos la función `imwr` para realizar la transformda wavelet inversa y poder visualizar la imagen tras la eliminación de ruido.
+
+# Desarrollo y resultados
+
+
+
 Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 ```{r, message = FALSE}
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg)
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick)
 ```
 
 Comenzamos cargando y visualizando las fotografías a emplear.
@@ -92,8 +120,6 @@ images_path <- list.files("./fotos", full.names = TRUE)
 nombres_images <- str_remove_all(string = str_remove_all(string = images_path, pattern = "./fotos/"), pattern = "\\.JPG|\\.jpg")
 
 images <- lapply(images_path, readJPEG) # Cargamos las imágenes
-
-# Nota: cambie de load.image a readJPEG pq asi ya no hace falta usar el drop para quitar lo de cimg, sale bien directamente
 names(images) <- nombres_images
 ```
 
@@ -114,13 +140,14 @@ rm(fotos_a_girar)
 
 
 ```{r}
-# Visualizamos las imagenes originales
+# Visualizamos las imagenes originales (comento para que no tarde en ejecutar)
 
-par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
+#par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
 
-for (img in nombres_images) {
-  display(Image(images[[img]], colormode = "Color"), method = "r")
-}
+# for (img in nombres_images) {
+#   display(Image(images[[img]], colormode = "Color"), method = "r")
+#   title(paste('Imagen', img))
+# }
 ```
 
 ## Inclusión de ruido sintético en las imágenes
@@ -251,7 +278,7 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
     dim = dim(image_array)
   )
 
- # Visualizar si se ha indicado
+  # Visualizar si se ha indicado
   if (plot == TRUE){
   layout(matrix(1:2, 1, 2))
   plot(Image(original_image, colormode = "Color"))
@@ -261,6 +288,7 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
   
   return(noisy_image_array)
 }
+
 
 # Aplicar los diferentes tipos de ruido a cada imagen
 add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
@@ -272,8 +300,333 @@ add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
 ```
 
 
+```{r}
+# Representación de las dos familias de wavelets empleadas por la función imwd.
+
+# Generación de un filtro con los coeficientes correspondientes de cada wavelet
+wave_coeffs <- filter.select(filter.number = 10, family = "DaubLeAsymm")
+wave_coeffs_2 <- filter.select(filter.number = 10, family = "DaubExPhase")
+
+# Eje temporal
+x <- seq_along(wave_coeffs$H)
+
+# # Visualización de las wavelets
+par(mfrow = c(1, 2))
+
+plot(x, wave_coeffs$H, type = "l", lwd = 2,
+     main = "Wavelet DaubLeAsymm",
+     xlab = "x", ylab = "Amplitud")
+points(x, wave_coeffs$H, pch = 19)
+
+plot(x, wave_coeffs_2$H, type = "l", lwd = 2,
+     main = "Wavelet DaubExPhase",
+     xlab = "x", ylab = "Amplitud")
+points(x, wave_coeffs_2$H, pch = 19)
+
+
+rm(wave_coeffs)
+rm(wave_coeffs_2)
+rm(x)
+
+```
+
 ## Función imwd
 
-## Función denoise...
+El primer método que emplearemos para la eliminación de ruido es el algoritmo de Mallat a través de 
+la función `imwd`. Antes de poder aplicar esta función, necessitames realizar un pre-procesamiento a las imágenes, ya que 
+este algoritmo necesita una matriz cuadrada cuyas dimensiones sean potencia de dos. Se han escogido 2 maneras distintas para obtener imágenes con el tamaño adecuado. Por un lado, redimensionaremos las imágenes con la función `resize`, lo que podría conllevar problemas de distorsión si las imágenes estaban lejos de tener dimensiones cuadradas. Por ello, también vamos a emplear otra técnica y rellenaremos las matrices de las imágnes con valores de 0 hasta alcanzar las dimensiones adecuadas. Observamos los problemas que surguen en cada caso y trataremos de solucionarlos de distintas maneras.
+
+### Redimensionando las imágenes
+
+Como ya se ha visto para poder aplicar la función `imwd()`es necesario partir de una matriz cuadrada cuyas dimensiones sean potencia de dos. Por ello, en primer lugar creamos una función `resize_imwd()` tal que dada una foto busca la submatriz cuadrada y potencia de dos más grande posible y a continuacón redimensiona la imagen a dicha submatriz cuadrada.
+
+```{r}
+# Pre-procesamiento al aplicado de función imwd (algoritmo de Mallat).
+# Redimensionamiento de la imagen 
+
+resize_imwd<- function(foto){
+  
+  img <- as.cimg(foto) # Pasar a formato Imager para aplicar función resize
+   
+  # Dimensiones de la foto
+  dim_foto <- dim(foto)
+  filas <- dim_foto[1]
+  columnas <- dim_foto[2]
+  
+  lado_minimo <- min(filas, columnas)  # Tamaño submatriz cuadrada mas grande
+  lado_potencia2 <- 2^floor(log2(lado_minimo)) # Tamaño submatriz cuadrada potencia de dos mas grande
+  
+  foto_resized <-resize(foto, w = lado_potencia2, h = lado_potencia2) # Redimensionado de la imagen
+
+return(foto_resized)
+}
+```
+
+Por otro lado, creamos una función para el post-procesamiento de las imágenes tras la eliminición de ruido. Queremos devolverlas a su tamaño original con el objetivo de comparar con las imágenes iniciales.
+
+```{r}
+# Post-procesamiento de la imagen:
+# Redimensionamiento de la imagen a su tamaño original.
+
+resize_imwd_to_original<- function(image_redimensionada, nombre_foto){
+  
+  #img <- as.cimg(image_redimensionada)
+  foto <- images[[nombre_foto]]
+  
+  # Dimensiones de la foto
+  dim_foto <- dim(foto)
+  filas <- dim_foto[2]
+  columnas <- dim_foto[1]
+  
+  # Redimensionado de la imagen
+  foto_resized <-EBImage::resize(image_redimensionada, w = columnas, h = filas) 
+ 
+
+return(foto_resized)
+}
+```
+
+Comenzamos generando una función `procesar_imagen_wavelet` con parámetros foto, tipo y policy. Esta función realiza en primer lugar la transformada wavelet a cada uno de los tres canales de una imagen. A continuación, se realiza el thresholding con la función threshold, pudiendo variar de el tipo de "hard" a "soft" y el parámetro policy (modificando adecuadamente los parámetros necesarios en la función threshold en este último caso). Una vez realizada la eliminación de ruido, se aplica la trasnformada wavelet inversa `imwr` para por último reconstruir la imagen a partir de los tres canales.
+```{r}
+procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
+  # 1. Realizamos la transformada wavelet a cada canal
+  lwd <- lapply(1:3, function(canal) {
+    imwd(foto[,,canal])  
+  })
+  
+  # 2. Aplicamos el umbral a los coeficientes de la transformada wavelet
+  lwd_threshold <- lapply(lwd, function(canal_wd) {
+    niveles <- canal_wd$nlevels
+    wavethresh::threshold(canal_wd, levels = 3:(niveles-1), type = tipo, policy = policy,by_level=TRUE,compression=FALSE)
+  })
+  # 3. Aplicamos la transformada wavelet inversa a cada canal umbralizado
+  ilwd <- lapply(lwd_threshold, function(canal_umbralizado) {
+    wavethresh::imwr(canal_umbralizado)  # Transformada wavelet inversa
+  })
+  
+  # 4. Reconstruir la imagen combinando los tres canales procesados
+  imagen_reconstruida <- abind::abind(ilwd[[1]], ilwd[[2]], ilwd[[3]], along = 3)
+    imagen <- Image(imagen_reconstruida, colormode = 'Color')
+  
+  return(imagen)
+}
+```
+
+
+Para comenzar el análisis, vamos a emplear dos imágenes muy parecidas (imágenes 4 y 5). Una de ellas tiene muy alta resolución mientras que la segunda cuenta con una calidad mucho menor. El objetivo es determinar si la resolución de la imagen afecta a la hora de eliminar ruido de esta. Vamos a probar con el primer tipo de ruido, ruido gaussiano.
+
+```{r}
+# Añadimos ruido gaussiano a las imágenes con sd = 0.3
+image_4_gaussian_noise <- add_noise_to_image("4", "gaussian", list(std_dev = 0.3))
+image_5_gaussian_noise <- add_noise_to_image("5", "gaussian", list(std_dev = 0.3))
+
+# Hacemos una lista con las imágenes con ruido a redimensionar
+images_for_imwd_cut_1 <- list(image_4_gaussian_noise, image_5_gaussian_noise)
+names(images_for_imwd_cut_1) <- c('4 Noise: gaussian', '5 Noise: gaussian')
+
+# Eliminamos variables innecesarias
+rm(image_4_gaussian_noise)
+rm(image_5_gaussian_noise)
+```
+
+Aplicamos la función `resize_imwd` creada anteriormente para obtener una matriz con las dimensiones necesarias para aplicar la transformada wavelet.
+```{r}
+images_recortadas <- lapply(images_for_imwd_cut_1, resize_imwd)
+```
+
+Una vez tenemos las imágenes con ruido generadas y redimensionadas adecuadamente, podemos aplicar la función `imwd` a cada uno de los tres canales (R, G y B). Empleamos la función `procesar_imagen_wavelet` que devuelve las imágenes reconstruidas después del thresholding. Para ruido gaussiano y para comenzar, vamos a elegir los parámetros por defecto de la función para el thresholding.
+
+```{r}
+images_sin_ruido_gaussiano <- lapply(images_recortadas, procesar_imagen_wavelet)
+```
+Finalmente, visualizamos los resultados. Primeramente, observamos las imágenes redimensionadas con ruido y la imagen obtenida tras el uso del método de thresholding para la eliminación de este. Observamos una principal diferencia entre ambas: la foto que contaba con menor resolución presenta también el peor resultado. Aunque el ruido haya sido eliminadom, sus bordes están más difuminados y tiene muy baja calidad.
+
+```{r}
+par(mfrow = c(2, 2), cex = 0.5)
+
+display(Image(images_recortadas[[1]], colormode = 'Color'), method='r')
+title('Imagen 4 con ruido')
+display(Image(images_sin_ruido_gaussiano[[1]], colormode = 'Color'), method='r')
+title('Imagen 4 sin ruido')
+
+display(Image(images_recortadas[[2]], colormode = 'Color'), method='r')
+title('Imagen 5 con ruido')
+display(Image(images_sin_ruido_gaussiano[[2]], colormode = 'Color'), method='r')
+title('Imagen 5 sin ruido')
+```
+En segundo lugar, vamos a visualizar las imágenes originales y las imágenes sin ruido redimensionadas a su tamaño original, usando la función `resize_imwd_to_original`.
+
+```{r}
+images_sin_ruido <- Map(resize_imwd_to_original, images_sin_ruido_gaussiano, c("4", "5") )
+```
+
+
+```{r}
+par(mfrow = c(2, 2), cex = 0.5)
+
+display(Image(images[[4]], colormode = 'Color'), method='r')
+title('Imagen 4 original')
+display(Image(images_sin_ruido[[1]], colormode = 'Color'), method='r')
+title('Imagen 4 sin ruido')
+
+display(Image(images[[5]], colormode = 'Color'), method='r')
+title('Imagen 5 original')
+display(Image(images_sin_ruido[[2]], colormode = 'Color'), method='r')
+title('Imagen 5 sin ruido')
+```
+Vemos que efectivamente, la imagen que originalemente contaba con un número de píxeles mucho menor, la imagen 5, presenta una gran distorsión tras la eliminación de ruido.
+
+```{r}
+rm(images_for_imwd_cut_1,images_sin_ruido_gaussiano)
+```
+
+
+A continuación vamos a comprobar que es lo que ocurre cuando añadimos ruido sintético sinusoidal y si la frecuencia de este afecta al resultado de la eliminación de ruido. Trabajaremos con una única fotografía: la imagen 1.
+
+```{r}
+# Añadimos ruido sinusoidal a las imágenes con sd = 0.3
+image_1_sinosuidal_high <- add_noise_to_image("1", "sinusoidal_high", list(frequency = 50, amplitude = 0.3))
+image_1_sinosuidal_low <- add_noise_to_image("2", "sinusoidal_low", list(frequency = 5, amplitude = 0.3))
+
+# Hacemos una lista con las imágenes con ruido a redimensionar
+images_for_imwd_cut_2 <- list(image_1_sinosuidal_high , image_1_sinosuidal_low )
+names(images_for_imwd_cut_2) <- c('1 Noise: sinusoidal high', '1 Noise: sinusoidal low')
+
+# Eliminamos variables innecesarias
+rm(image_1_sinosuidal_high)
+rm(image_1_sinosuidal_low)
+```
+
+```{r}
+images_recortadas <- lapply(images_for_imwd_cut_2, resize_imwd)
+images_sin_ruido_sinusoidal<- lapply(images_recortadas, procesar_imagen_wavelet)
+```
+Esta claro que los parámetros por defecto de la función threshold no son capaces de eliminar el ruido de tipo sinusoidal de la manera en que si lo era con el ruido de tipo Gaussiano, un tipo de ruido aleatorio, al contrario que el sinusoidal, que es una señal periódica.
+```{r}
+par(mfrow = c(2, 2), cex = 0.5)
+
+display(Image(images_recortadas[[1]], colormode = 'Color'), method='r')
+title('Imagen 1 con ruido de frecuencia alta')
+display(Image(images_sin_ruido_sinusoidal[[1]], colormode = 'Color'), method='r')
+title('Imagen 1 sin ruido')
+
+display(Image(images_recortadas[[2]], colormode = 'Color'), method='r')
+title('Imagen 1 con ruido de frecuencia baja')
+display(Image(images_sin_ruido_sinusoidal[[2]], colormode = 'Color'), method='r')
+title('Imagen 1 sin ruido')
+```
+Vamos a variar parámetros de la función threshold para intentar quitar este ruido de manera más manual. En primer lugar, cambiamos el número de niveles al que aplicamos el umbral, para incluirlos a todos. Cambiamos policy a "manual" y variamos el valor del umbral de forma manual hasta encontrar uno que sea satisfactorio. 
+```{r}
+procesar_imagen_wavelet_sinusoidal <- function(foto, tipo = "hard", policy = "universal") {
+  # 1. Realizamos la transformada wavelet a cada canal
+  lwd <- lapply(1:3, function(canal) {
+    imwd(foto[,,canal])  
+  })
+  
+  # 2. Aplicamos el umbral a los coeficientes de la transformada wavelet
+  lwd_threshold <- lapply(lwd, function(canal_wd) {
+    niveles <- canal_wd$nlevels
+    wavethresh::threshold(canal_wd, levels = 1:(niveles-1), type = tipo, policy = policy,by_level=TRUE,compression=FALSE, value = 4)
+  })
+  # 3. Aplicamos la transformada wavelet inversa a cada canal umbralizado
+  ilwd <- lapply(lwd_threshold, function(canal_umbralizado) {
+    wavethresh::imwr(canal_umbralizado)  # Transformada wavelet inversa
+  })
+  
+  # 4. Reconstruir la imagen combinando los tres canales procesados
+  imagen_reconstruida <- abind::abind(ilwd[[1]], ilwd[[2]], ilwd[[3]], along = 3)
+    imagen <- Image(imagen_reconstruida, colormode = 'Color')
+  
+  return(imagen)
+}
+```
+
+
+```{r}
+images_sin_ruido_sinusoidal<- lapply(images_recortadas, procesar_imagen_wavelet_sinusoidal, tipo ="soft", policy = "manual")
+```
+
+Con un valor de umbral de 4 y variando el tipo a "soft", observamos que hemos conseguido eliminar el ruido sinusoidal de alta frecuencia, pero pagando un precio muy alto: los bordes de la imágen se disorsionan completamente y tenemos una muy baja resolución. Por otro lado, el ruido de frecuencia baja, aunque ha disminuido, claramente sigue presente en la imagen. El umbral necesario para eliminarlo con este método es tan alto que distorsionaría la imagen casi por completo.
+```{r}
+par(mfrow = c(2, 2), cex = 0.5)
+
+display(Image(images_recortadas[[1]], colormode = 'Color'), method='r')
+title('Imagen 1 con ruido de frecuencia alta')
+display(Image(images_sin_ruido_sinusoidal[[1]], colormode = 'Color'), method='r')
+title('Imagen 1 sin ruido')
+
+display(Image(images_recortadas[[2]], colormode = 'Color'), method='r')
+title('Imagen 1 con ruido de frecuencia baja')
+display(Image(images_sin_ruido_sinusoidal[[2]], colormode = 'Color'), method='r')
+title('Imagen 1 sin ruido')
+```
+
+Probamos otros tipos de ruido: gamma, salt and pepper y ruido uniforme en las imágenes 2 y 3. 
+```{r}
+# Añadimos ruido a imágenes
+image_2_salt_pepper <- add_noise_to_image("2", "salt_pepper", list(epsilon = 0.1))
+image_3_gamma <- add_noise_to_image("3", "gamma", list(looks = 2))
+image_3_uniform <- add_noise_to_image("3", "uniform_multiplicative", list(looks = 2))
+
+
+# Hacemos una lista con las imágenes con ruido a recortar
+images_for_imwd_cut_3 <- list( image_2_salt_pepper, image_3_gamma, image_3_uniform)
+names(images_for_imwd_cut_3) <- c('2 Noise: salt and pepper', '3 Noise: gamma','3 Noise: uniform')
+
+# Eliminamos variables innecesarias
+rm(image_2_salt_pepper, image_3_gamma, image_3_uniform)
+
+```
+Suguiendo el mismo procedimiento, redimensionamos las imágenes y y realizamos las transformadas wavelet y el thresholding con la función `procesar_imagen_wavelet`.
+```{r}
+images_recortadas <- lapply(images_for_imwd_cut_3, resize_imwd)
+images_sin_ruidos<- lapply(images_recortadas, procesar_imagen_wavelet)
+```
+Visualizamos los resultados. Parece que el algoritmo funciona correctamente para los tres tipos de ruido.
+```{r}
+par(mfrow = c(3, 2), cex = 0.5)
+
+display(Image(images_recortadas[[1]], colormode = 'Color'), method='r')
+title('Imagen 2 con salt and pepper')
+display(Image(images_sin_ruidos[[1]], colormode = 'Color'), method='r')
+title('Imagen 2 sin ruido')
+
+display(Image(images_recortadas[[2]], colormode = 'Color'), method='r')
+title('Imagen 3 con ruido gamma')
+display(Image(images_sin_ruidos[[2]], colormode = 'Color'), method='r')
+title('Imagen 3 sin ruido')
+
+display(Image(images_recortadas[[3]], colormode = 'Color'), method='r')
+title('Imagen 3 con ruido uniforme')
+display(Image(images_sin_ruidos[[3]], colormode = 'Color'), method='r')
+title('Imagen 3 sin ruido')
+```
+Redimensionamos las imágenes obtenidas a su tamaño original para poder compararlas con estas. Vemos que en este caso la eliminación de ruido ha sido muy buena y no hay apenas distorsión ni suavizado de los bordes.
+```{r}
+images_sin_ruido <- Map(resize_imwd_to_original, images_sin_ruidos, c("2", "3", "3") )
+```
+
+```{r}
+par(mfrow = c(3, 2), cex = 0.5)
+
+display(Image(images[[2]], colormode = 'Color'), method='r')
+title('Imagen 2 original')
+display(Image(images_sin_ruido[[1]], colormode = 'Color'), method='r')
+title('Imagen 2 sin ruido')
+
+display(Image(images[[3]], colormode = 'Color'), method='r')
+title('Imagen 3 original')
+display(Image(images_sin_ruido[[2]], colormode = 'Color'), method='r')
+title('Imagen 3 sin ruido')
+
+display(Image(images[[3]], colormode = 'Color'), method='r')
+title('Imagen 3 original')
+display(Image(images_sin_ruido[[3]], colormode = 'Color'), method='r')
+title('Imagen 3 sin ruido')
+```
+```{r}
+rm(images_recortadas, images_sin_ruido, images_sin_ruidos)
+```
+
 
 # Conclusiones
