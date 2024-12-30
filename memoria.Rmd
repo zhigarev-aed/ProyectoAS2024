@@ -110,11 +110,7 @@ Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 ```{r, message = FALSE}
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-<<<<<<< HEAD
 p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick)
-=======
-p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, knitr)
->>>>>>> Rebeca
 ```
 
 Comenzamos cargando y visualizando las fotografías a emplear.
@@ -145,7 +141,7 @@ rm(fotos_a_girar)
 ```
 
 
-<<<<<<< HEAD
+
 ```{r}
 # Visualizamos las imagenes originales (comento para que no tarde en ejecutar)
 
@@ -156,9 +152,6 @@ rm(fotos_a_girar)
 #   title(paste('Imagen', img))
 # }
 ```
-=======
-
->>>>>>> Alejandra
 
 ## Inclusión de ruido sintético en las imágenes
 
@@ -256,11 +249,7 @@ NOISE_TYPES <- list(
 
 ```{r, fig.height = 4}
 # Función para añadir ruido a una imagen
-<<<<<<< HEAD
 add_noise_to_image <- function(image_name, noise_type, noise_params = list(), plot = FALSE) {
-=======
-add_noise_to_image <- function(image_name, noise_type, noise_params = list(),plot=FALSE) {
->>>>>>> Alejandra
   # Verificar si la imagen existe en la lista
   if (!image_name %in% names(images)) {
     stop("La imagen con este nombre no se encuentra en la lista 'images'")
@@ -292,11 +281,8 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(),plo
     dim = dim(image_array)
   )
 
-<<<<<<< HEAD
+
   # Visualizar si se ha indicado
-=======
- # Visualizar si se ha indicado
->>>>>>> Alejandra
   if (plot == TRUE){
   layout(matrix(1:2, 1, 2))
   plot(Image(original_image, colormode = "Color"))
@@ -307,32 +293,633 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(),plo
   return(noisy_image_array)
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
+
 # Aplicar los diferentes tipos de ruido a cada imagen
+
 # add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
 # add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
 # add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
 # add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
 # add_noise_to_image("5", "gamma", list(looks = 2))
 # add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
->>>>>>> Rebeca
+
+imgr_1 <- add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+imgr_2 <- add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+imgr_3 <- add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
+imgr_4 <- add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+imgr_5 <- add_noise_to_image("5", "gamma", list(looks = 2))
+imgr_6 <- add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+
+```
+
+## Función fftshift
+
+```{r, echo=F}
+p_load(gsignal, fields)
+```
+
+### Imagen 1 y ruido gaussiano
+
+
+```{r echo=F}
+# CANAL ROJO
+
+fft1_r <- fft(imgr_1[,,1])
+n1_r <- length(fft1_r)
+
+fshift1_r <- gsignal::fftshift(fft1_r, MARGIN = c(1,2))
+spectr1_r <- 20*log10(Mod(fshift1_r))
+
+# fields::image.plot(spectr1_r)
+
+# CANAL VERDE
+
+fft1_g <- fft(imgr_1[,,2])
+n1_g <- length(fft1_g)
+
+fshift1_g <- gsignal::fftshift(fft1_g, MARGIN = c(1,2))
+spectr1_g <- 20*log10(Mod(fshift1_g))
+
+# fields::image.plot(spectr1_g)
+
+# CANAL AZUL
+
+fft1_b <- fft(imgr_1[,,3])
+n1_b <- length(fft1_b)
+
+fshift1_b <- gsignal::fftshift(fft1_b, MARGIN = c(1,2))
+spectr1_b <- 20*log10(Mod(fshift1_b))
+
+# fields::image.plot(spectr1_b)
+```
+
+```{r echo=F}
+
+# CANAL ROJO
+
+small1_r <- 10
+
+fshift1_r[0:6000, 0:1200] <- small1_r
+fshift1_r[0:6000, 2800:4000] <- small1_r
+fshift1_r[0:2500, 1200:2800] <- small1_r
+fshift1_r[3500:6000, 1200:2800] <- small1_r
+
+spectr_shifted1_r <- 20*log10(Mod(fshift1_r))
+
+# fields::image.plot(spectr_shifted1_r)
+
+# CANAL VERDE
+
+small1_g <- 10
+
+fshift1_g[0:6000, 0:1200] <- small1_g
+fshift1_g[0:6000, 2800:4000] <- small1_g
+fshift1_g[0:2500, 1200:2800] <- small1_g
+fshift1_g[3500:6000, 1200:2800] <- small1_g
+
+spectr_shifted1_g <- 20*log10(Mod(fshift1_g))
+
+# fields::image.plot(spectr_shifted1_g)
+
+# CANAL AZUL
+
+small1_b <- 10
+
+fshift1_b[0:6000, 0:1200] <- small1_b
+fshift1_b[0:6000, 2800:4000] <- small1_b
+fshift1_b[0:2500, 1200:2800] <- small1_b
+fshift1_b[3500:6000, 1200:2800] <- small1_b
+
+spectr_shifted1_b <- 20*log10(Mod(fshift1_b))
+
+# fields::image.plot(spectr_shifted1_b)
+
+```
+
+```{r echo=F}
+fft1mod_r <- gsignal::ifftshift(fshift1_r, MARGIN = c(1,2))
+img_1_r <- Re(fft(fft1mod_r, inverse = T)) / prod(dim(fft1mod_r))
+fft1mod_g <- gsignal::ifftshift(fshift1_g, MARGIN = c(1,2))
+img_1_g <- Re(fft(fft1mod_g, inverse = T)) / prod(dim(fft1mod_g))
+fft1mod_b <- gsignal::ifftshift(fshift1_b, MARGIN = c(1,2))
+img_1_b <- Re(fft(fft1mod_b, inverse = T)) / prod(dim(fft1mod_b))
+
+img_1 <- array(0, dim = dim(imgr_1))
+img_1[,,1] <- img_1_r
+img_1[,,2] <- img_1_g
+img_1[,,3] <- img_1_b
+
 ```
 
 
-```{r}
->>>>>>> Alejandra
-
-# Aplicar los diferentes tipos de ruido a cada imagen
-#add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
-#add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
-#add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
-#add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
-#add_noise_to_image("5", "gamma", list(looks = 2))
-#add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
+```{r echo=F}
+plot(Image((imgr_1), colormode = "Color"))
+plot(Image((img_1), colormode = "Color"))
 ```
+
+### Imagen 2 y ruido sinusoidal alto
+
+
+```{r echo=F}
+
+# CANAL ROJO
+
+fft2_r <- fft(imgr_2[,,1])
+n2_r <- length(fft2_r)
+
+fshift2_r <- gsignal::fftshift(fft2_r, MARGIN = c(1,2))
+spectr2_r <- 20*log10(Mod(fshift2_r))
+
+# fields::image.plot(spectr2_r)
+
+# CANAL VERDE
+
+fft2_g <- fft(imgr_2[,,2])
+n2_g <- length(fft2_g)
+
+fshift2_g <- gsignal::fftshift(fft2_g, MARGIN = c(1,2))
+spectr2_g <- 20*log10(Mod(fshift2_g))
+
+# fields::image.plot(spectr2_g)
+
+# CANAL AZUL
+
+fft2_b <- fft(imgr_2[,,3])
+n2_b <- length(fft2_b)
+
+fshift2_b <- gsignal::fftshift(fft2_b, MARGIN = c(1,2))
+spectr2_b <- 20*log10(Mod(fshift2_b))
+
+# fields::image.plot(spectr2_b)
+```
+
+```{r echo=F}
+
+# CANAL ROJO
+
+small2_r <- -1
+
+fshift2_r[2980:3020, 0:800] <- small2_r
+fshift2_r[2980:3020, 3200:4000] <- small2_r
+fshift2_r[2900:3100, 0:100] <- small2_r
+fshift2_r[2900:3100, 3900:4000] <- small2_r
+
+spectr_shifted2_r <- 20*log10(Mod(fshift2_r))
+
+# fields::image.plot(spectr_shifted2_r)
+
+# CANAL VERDE
+
+small2_g <- -1
+
+fshift2_g[2980:3020, 0:800] <- small2_g
+fshift2_g[2980:3020, 3200:4000] <- small2_g
+fshift2_g[2900:3100, 0:100] <- small2_g
+fshift2_g[2900:3100, 3900:4000] <- small2_g
+
+spectr_shifted2_g <- 20*log10(Mod(fshift2_g))
+
+# fields::image.plot(spectr_shifted2_g)
+
+# CANAL AZUL
+
+small2_b <- -1
+
+fshift2_b[2980:3020, 0:800] <- small2_b
+fshift2_b[2980:3020, 3200:4000] <- small2_b
+fshift2_b[2900:3100, 0:100] <- small2_b
+fshift2_b[2900:3100, 3900:4000] <- small2_b
+
+spectr_shifted2_b <- 20*log10(Mod(fshift2_b))
+
+# fields::image.plot(spectr_shifted2_b)
+
+```
+
+```{r echo=F}
+fft2mod_r <- gsignal::ifftshift(fshift2_r, MARGIN = c(1,2))
+img_2_r <- Re(fft(fft2mod_r, inverse = T)) / prod(dim(fft2mod_r))
+fft2mod_g <- gsignal::ifftshift(fshift2_g, MARGIN = c(1,2))
+img_2_g <- Re(fft(fft2mod_g, inverse = T)) / prod(dim(fft2mod_g))
+fft2mod_b <- gsignal::ifftshift(fshift2_b, MARGIN = c(1,2))
+img_2_b <- Re(fft(fft2mod_b, inverse = T)) / prod(dim(fft2mod_b))
+
+img_2 <- array(0, dim = dim(imgr_2))
+img_2[,,1] <- img_2_r
+img_2[,,2] <- img_2_g
+img_2[,,3] <- img_2_b
+
+```
+
+
+```{r echo=F}
+plot(Image((imgr_2), colormode = "Color"))
+plot(Image((img_2), colormode = "Color"))
+```
+
+
+### Imagen 3 y ruido sinusoidal bajo
+
+
+```{r echo=F}
+# CANAL ROJO
+
+fft3_r <- fft(imgr_3[,,1])
+n3_r <- length(fft3_r)
+
+fshift3_r <- gsignal::fftshift(fft3_r, MARGIN = c(1,2))
+spectr3_r <- 20*log10(Mod(fshift3_r))
+
+# fields::image.plot(spectr3_r)
+
+# CANAL VERDE
+
+fft3_g <- fft(imgr_3[,,2])
+n3_g <- length(fft3_g)
+
+fshift3_g <- gsignal::fftshift(fft3_g, MARGIN = c(1,2))
+spectr3_g <- 20*log10(Mod(fshift3_g))
+
+# fields::image.plot(spectr3_g)
+
+# CANAL AZUL
+
+fft3_b <- fft(imgr_3[,,3])
+n33_b <- length(fft3_b)
+
+fshift3_b <- gsignal::fftshift(fft3_b, MARGIN = c(1,2))
+spectr3_b <- 20*log10(Mod(fshift3_b))
+
+# fields::image.plot(spectr3_b)
+```
+
+```{r echo=F}
+
+# CANAL ROJO
+
+small3_r <- 10
+
+fshift3_r[0:6000, 0:1200] <- small3_r
+fshift3_r[0:6000, 2800:4000] <- small3_r
+fshift3_r[0:2500, 1200:2800] <- small3_r
+fshift3_r[3500:6000, 1200:2800] <- small3_r
+
+spectr_shifted3_r <- 20*log10(Mod(fshift3_r))
+
+# fields::image.plot(spectr_shifted3_r)
+
+# CANAL VERDE
+
+small3_g <- 10
+
+fshift3_g[0:6000, 0:1200] <- small3_g
+fshift3_g[0:6000, 2800:4000] <- small3_g
+fshift3_g[0:2500, 1200:2800] <- small3_g
+fshift3_g[3500:6000, 1200:2800] <- small3_g
+
+spectr_shifted3_g <- 20*log10(Mod(fshift3_g))
+
+# fields::image.plot(spectr_shifted3_g)
+
+# CANAL AZUL
+
+small3_b <- 10
+
+fshift3_b[0:6000, 0:1200] <- small3_b
+fshift3_b[0:6000, 2800:4000] <- small3_b
+fshift3_b[0:2500, 1200:2800] <- small3_b
+fshift3_b[3500:6000, 1200:2800] <- small3_b
+
+spectr_shifted3_b <- 20*log10(Mod(fshift3_b))
+
+# fields::image.plot(spectr_shifted1_b)
+
+```
+
+```{r echo=F}
+fft3mod_r <- gsignal::ifftshift(fshift3_r, MARGIN = c(1,2))
+img_3_r <- Re(fft(fft3mod_r, inverse = T)) / prod(dim(fft3mod_r))
+fft3mod_g <- gsignal::ifftshift(fshift3_g, MARGIN = c(1,2))
+img_3_g <- Re(fft(fft3mod_g, inverse = T)) / prod(dim(fft3mod_g))
+fft3mod_b <- gsignal::ifftshift(fshift3_b, MARGIN = c(1,2))
+img_3_b <- Re(fft(fft3mod_b, inverse = T)) / prod(dim(fft3mod_b))
+
+img_3 <- array(0, dim = dim(imgr_3))
+img_3[,,1] <- img_3_r
+img_3[,,2] <- img_3_g
+img_3[,,3] <- img_3_b
+
+```
+
+
+```{r echo=F}
+plot(Image((imgr_3), colormode = "Color"))
+plot(Image((img_3), colormode = "Color"))
+```
+
+### Imagen 4 y ruido sal y pimienta
+
+
+```{r echo=F}
+# CANAL ROJO
+
+fft4_r <- fft(imgr_4[,,1])
+n4_r <- length(fft4_r)
+
+fshift4_r <- gsignal::fftshift(fft4_r, MARGIN = c(1,2))
+spectr4_r <- 20*log10(Mod(fshift4_r))
+
+# fields::image.plot(spectr4_r)
+
+# CANAL VERDE
+
+fft4_g <- fft(imgr_4[,,2])
+n4_g <- length(fft4_g)
+
+fshift4_g <- gsignal::fftshift(fft4_g, MARGIN = c(1,2))
+spectr4_g <- 20*log10(Mod(fshift4_g))
+
+# fields::image.plot(spectr4_g)
+
+# CANAL AZUL
+
+fft4_b <- fft(imgr_4[,,3])
+n4_b <- length(fft4_b)
+
+fshift4_b <- gsignal::fftshift(fft4_b, MARGIN = c(1,2))
+spectr4_b <- 20*log10(Mod(fshift4_b))
+
+# fields::image.plot(spectr4_b)
+```
+
+```{r echo=F}
+
+# CANAL ROJO
+
+small4_r <- 10
+
+fshift4_r[0:6000, 0:1200] <- small4_r
+fshift4_r[0:6000, 2800:4000] <- small4_r
+fshift4_r[0:2500, 1200:2800] <- small4_r
+fshift4_r[3500:6000, 1200:2800] <- small4_r
+
+spectr_shifted4_r <- 20*log10(Mod(fshift4_r))
+
+# fields::image.plot(spectr_shifted4_r)
+
+# CANAL VERDE
+
+small4_g <- 10
+
+fshift4_g[0:6000, 0:1200] <- small4_g
+fshift4_g[0:6000, 2800:4000] <- small4_g
+fshift4_g[0:2500, 1200:2800] <- small4_g
+fshift4_g[3500:6000, 1200:2800] <- small4_g
+
+spectr_shifted4_g <- 20*log10(Mod(fshift4_g))
+
+# fields::image.plot(spectr_shifted4_g)
+
+# CANAL AZUL
+
+small4_b <- 10
+
+fshift4_b[0:6000, 0:1200] <- small4_b
+fshift4_b[0:6000, 2800:4000] <- small4_b
+fshift4_b[0:2500, 1200:2800] <- small4_b
+fshift4_b[3500:6000, 1200:2800] <- small4_b
+
+spectr_shifted4_b <- 20*log10(Mod(fshift4_b))
+
+# fields::image.plot(spectr_shifted4_b)
+
+```
+
+```{r echo=F}
+fft4mod_r <- gsignal::ifftshift(fshift4_r, MARGIN = c(1,2))
+img_4_r <- Re(fft(fft4mod_r, inverse = T)) / prod(dim(fft4mod_r))
+fft4mod_g <- gsignal::ifftshift(fshift4_g, MARGIN = c(1,2))
+img_4_g <- Re(fft(fft4mod_g, inverse = T)) / prod(dim(fft4mod_g))
+fft4mod_b <- gsignal::ifftshift(fshift4_b, MARGIN = c(1,2))
+img_4_b <- Re(fft(fft4mod_b, inverse = T)) / prod(dim(fft4mod_b))
+
+img_4 <- array(0, dim = dim(imgr_4))
+img_4[,,1] <- img_4_r
+img_4[,,2] <- img_4_g
+img_4[,,3] <- img_4_b
+
+```
+
+
+```{r echo=F}
+plot(Image((imgr_4), colormode = "Color"))
+plot(Image((img_4), colormode = "Color"))
+```
+
+### Imagen 5 y ruido gamma
+
+
+```{r echo=F}
+# CANAL ROJO
+
+fft5_r <- fft(imgr_5[,,1])
+n5_r <- length(fft5_r)
+
+fshift5_r <- gsignal::fftshift(fft5_r, MARGIN = c(1,2))
+spectr5_r <- 20*log10(Mod(fshift5_r))
+
+# fields::image.plot(spectr5_r)
+
+# CANAL VERDE
+
+fft5_g <- fft(imgr_5[,,2])
+n5_g <- length(fft5_g)
+
+fshift5_g <- gsignal::fftshift(fft5_g, MARGIN = c(1,2))
+spectr5_g <- 20*log10(Mod(fshift5_g))
+
+# fields::image.plot(spectr5_g)
+
+# CANAL AZUL
+
+fft5_b <- fft(imgr_5[,,3])
+n5_b <- length(fft5_b)
+
+fshift5_b <- gsignal::fftshift(fft5_b, MARGIN = c(1,2))
+spectr5_b <- 20*log10(Mod(fshift5_b))
+
+# fields::image.plot(spectr5_b)
+```
+
+```{r echo=F}
+
+# CANAL ROJO
+
+small5_r <- 10
+
+fshift5_r[0:1600, 0:450] <- small5_r
+fshift5_r[0:1600, 616:1066] <- small5_r
+fshift5_r[0:650, 450:616] <- small5_r
+fshift5_r[950:1600, 450:616] <- small5_r
+
+spectr_shifted1_r <- 20*log10(Mod(fshift5_r))
+
+# fields::image.plot(spectr_shifted5_r)
+
+# CANAL VERDE
+
+small5_g <- 10
+
+fshift5_g[0:1600, 0:450] <- small5_g
+fshift5_g[0:1600, 616:1066] <- small5_g
+fshift5_g[0:650, 450:616] <- small5_g
+fshift5_g[950:1600, 450:616] <- small5_g
+
+spectr_shifted5_g <- 20*log10(Mod(fshift5_g))
+
+# fields::image.plot(spectr_shifted5_g)
+
+# CANAL AZUL
+
+small5_b <- 10
+
+fshift5_b[0:1600, 0:450] <- small5_b
+fshift5_b[0:1600, 616:1066] <- small5_b
+fshift5_b[0:650, 450:616] <- small5_b
+fshift5_b[950:1600, 450:616] <- small5_b
+
+spectr_shifted5_b <- 20*log10(Mod(fshift5_b))
+
+# fields::image.plot(spectr_shifted5_b)
+
+```
+
+```{r echo=F}
+fft5mod_r <- gsignal::ifftshift(fshift5_r, MARGIN = c(1,2))
+img_5_r <- Re(fft(fft5mod_r, inverse = T)) / prod(dim(fft5mod_r))
+fft5mod_g <- gsignal::ifftshift(fshift5_g, MARGIN = c(1,2))
+img_5_g <- Re(fft(fft5mod_g, inverse = T)) / prod(dim(fft5mod_g))
+fft5mod_b <- gsignal::ifftshift(fshift5_b, MARGIN = c(1,2))
+img_5_b <- Re(fft(fft5mod_b, inverse = T)) / prod(dim(fft5mod_b))
+
+img_5 <- array(0, dim = dim(imgr_5))
+img_5[,,1] <- img_5_r
+img_5[,,2] <- img_5_g
+img_5[,,3] <- img_5_b
+
+```
+
+
+```{r echo=F}
+plot(Image((imgr_5), colormode = "Color"))
+plot(Image((img_5), colormode = "Color"))
+```
+
+### Imagen 5 y ruido multiplicativo uniforme
+
+
+```{r echo=F}
+# CANAL ROJO
+
+fft6_r <- fft(imgr_6[,,1])
+n6_r <- length(fft6_r)
+
+fshift6_r <- gsignal::fftshift(fft6_r, MARGIN = c(1,2))
+spectr6_r <- 20*log10(Mod(fshift6_r))
+
+# fields::image.plot(spectr6_r)
+
+# CANAL VERDE
+
+fft6_g <- fft(imgr_6[,,2])
+n6_g <- length(fft6_g)
+
+fshift6_g <- gsignal::fftshift(fft6_g, MARGIN = c(1,2))
+spectr6_g <- 20*log10(Mod(fshift6_g))
+
+# fields::image.plot(spectr6_g)
+
+# CANAL AZUL
+
+fft6_b <- fft(imgr_6[,,3])
+n6_b <- length(fft6_b)
+
+fshift6_b <- gsignal::fftshift(fft6_b, MARGIN = c(1,2))
+spectr6_b <- 20*log10(Mod(fshift6_b))
+
+# fields::image.plot(spectr6_b)
+```
+
+```{r echo=F}
+
+# CANAL ROJO
+
+small6_r <- 15
+
+fshift6_r[0:1600, 0:450] <- small6_r
+fshift6_r[0:1600, 616:1066] <- small6_r
+fshift6_r[0:650, 450:616] <- small6_r
+fshift6_r[950:1600, 450:616] <- small6_r
+
+spectr_shifted6_r <- 20*log10(Mod(fshift6_r))
+
+# fields::image.plot(spectr_shifted6_r)
+
+# CANAL VERDE
+
+small6_g <- 15
+
+fshift6_g[0:1600, 0:450] <- small6_g
+fshift6_g[0:1600, 616:1066] <- small6_g
+fshift6_g[0:650, 450:616] <- small6_g
+fshift6_g[950:1600, 450:616] <- small6_g
+
+spectr_shifted6_g <- 20*log10(Mod(fshift6_g))
+
+# fields::image.plot(spectr_shifted6_g)
+
+# CANAL AZUL
+
+small6_b <- 15
+
+fshift6_b[0:1600, 0:450] <- small6_b
+fshift6_b[0:1600, 616:1066] <- small6_b
+fshift6_b[0:650, 450:616] <- small6_b
+fshift6_b[950:1600, 450:616] <- small6_b
+
+spectr_shifted6_b <- 20*log10(Mod(fshift6_b))
+
+# fields::image.plot(spectr_shifted6_b)
+
+```
+
+```{r echo=F}
+fft6mod_r <- gsignal::ifftshift(fshift6_r, MARGIN = c(1,2))
+img_6_r <- Re(fft(fft6mod_r, inverse = T)) / prod(dim(fft6mod_r))
+fft6mod_g <- gsignal::ifftshift(fshift6_g, MARGIN = c(1,2))
+img_6_g <- Re(fft(fft6mod_g, inverse = T)) / prod(dim(fft6mod_g))
+fft6mod_b <- gsignal::ifftshift(fshift6_b, MARGIN = c(1,2))
+img_6_b <- Re(fft(fft6mod_b, inverse = T)) / prod(dim(fft6mod_b))
+
+img_6 <- array(0, dim = dim(imgr_6))
+img_6[,,1] <- img_6_r
+img_6[,,2] <- img_6_g
+img_6[,,3] <- img_6_b
+
+```
+
+
+```{r echo=F}
+plot(Image((imgr_6), colormode = "Color"))
+plot(Image((img_6), colormode = "Color"))
+```
+
+
+### Explicación del método
+
+(Borrador)
+
+El método usado usa la transformada rápida de fourier para poder eliminar altas frecuencias correspondientes a ruido en la imagen. La función *fftshift* desplaza las bajas frecuencias al centro del espectro y las altas a los extremos. Una vez se visualiza el espectro, se procede a disminuir la magnitud de las altas frecuencias cercanas a los extremos asignandoles una magnitud menor. Con este procedimiento estamos aplicando un filtro de paso bajo y aplicando *ifftshift* obtenemos la imagen en el dominio espacial con ruido eliminado.
 
 
 ```{r}
@@ -1016,8 +1603,7 @@ title('Imagen 3 sin ruido')
 rm(images_recortadas, images_sin_ruido, images_sin_ruidos)
 ```
 
-<<<<<<< HEAD
-=======
+
 ## Función denoise.dwt.2d
 
 Empleamos la función denoise.dwt.2d del paquete waveslim para eliminar el ruido de las imágenes empleando la transformada wavelet discreta (DWT).
@@ -1417,6 +2003,5 @@ include_graphics("denoisedwt2d/image5_denoised.png")
 La diferencia más notable en comparación con el resto de resultados, es que en este caso, al aumentar el numero de niveles de descomposición a un número que nos permita eliminar la mayor parte del ruido, la calidad de la imagen se ve significativamente afectada, y obtenemos una imagen excesivamente suavizada. Esto puede deberse a que a medida que aumentan los niveles de descomposición, la imagen se descompone en frecuencias cada vez más altas, provocando la pérdida de detalles finos.
 
 La baja resolución de la imagen hace que sea más difícil mantener un equilibrio entre la eliminación del ruido y la preservación de los detalles. Al aumentar los niveles de descomposición, el ruido se elimina en mayor medida, pero también se pierde mucha información útil.
->>>>>>> Rebeca
 
 # Conclusiones
