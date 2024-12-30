@@ -73,36 +73,6 @@ transformada discreta wavelet de acuerdo con el algoritmo de Mallat.
 El argumento `image` de la función debe ser una matriz cuadrada cuya dimensión 
 sea potencia de dos.`filter.number` elige la suavidad de la wavelet a emplear, siendo por defecto 10. `family` indica la familia de wavelets a emplear ("DaubExPhase" ó "DaubLeAsymm").Para tratar las fronteras, mantendremos el parámetro `bc = "periodic"` por defecto.
 
-
-```{r}
-# Representación de las dos familias de wavelets empleadas por la función imwd.
-
-# Generación de un filtro con los coeficientes correspondientes de cada wavelet
-wave_coeffs <- filter.select(filter.number = 10, family = "DaubLeAsymm")
-wave_coeffs_2 <- filter.select(filter.number = 10, family = "DaubExPhase")
-
-# Eje temporal
-x <- seq_along(wave_coeffs$H)
-
-# # Visualización de las wavelets
-par(mfrow = c(1, 2))
-
-plot(x, wave_coeffs$H, type = "l", lwd = 2,
-     main = "Wavelet DaubLeAsymm",
-     xlab = "x", ylab = "Amplitud")
-points(x, wave_coeffs$H, pch = 19)
-
-plot(x, wave_coeffs_2$H, type = "l", lwd = 2,
-     main = "Wavelet DaubExPhase",
-     xlab = "x", ylab = "Amplitud")
-points(x, wave_coeffs_2$H, pch = 19)
-
-
-rm(wave_coeffs)
-rm(wave_coeffs_2)
-rm(x)
-
-```
 Para la eliminación de ruido aplicaremos la función `threshold()` al objeto que
 devuelve la función `imwd()`. 
 
@@ -311,7 +281,35 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
 # add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
 ```
 
+```{r}
+# Representación de las dos familias de wavelets empleadas por la función imwd.
 
+# Generación de un filtro con los coeficientes correspondientes de cada wavelet
+wave_coeffs <- filter.select(filter.number = 10, family = "DaubLeAsymm")
+wave_coeffs_2 <- filter.select(filter.number = 10, family = "DaubExPhase")
+
+# Eje temporal
+x <- seq_along(wave_coeffs$H)
+
+# # Visualización de las wavelets
+par(mfrow = c(1, 2))
+
+plot(x, wave_coeffs$H, type = "l", lwd = 2,
+     main = "Wavelet DaubLeAsymm",
+     xlab = "x", ylab = "Amplitud")
+points(x, wave_coeffs$H, pch = 19)
+
+plot(x, wave_coeffs_2$H, type = "l", lwd = 2,
+     main = "Wavelet DaubExPhase",
+     xlab = "x", ylab = "Amplitud")
+points(x, wave_coeffs_2$H, pch = 19)
+
+
+rm(wave_coeffs)
+rm(wave_coeffs_2)
+rm(x)
+
+```
 
 ## Función imwd
 
