@@ -4,15 +4,15 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     echo: true
     number_sections: true
     theme: lumen
     toc: true
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
@@ -222,25 +222,32 @@ for (i in fotos_a_girar) {
 images[fotos_a_girar] <- images_rotadas
 rm(images_rotadas)
 rm(fotos_a_girar)
+rm(nombres_images)
 ```
 
 Vamos a visualizar las imágenes empleadas. Se han tomado 5 imágenes distintas pero todas con la misma temática. La elección se ha realizado pensando en poder observar como afecta la elimación de ruido detalles como la textura o defectos en las frutas. Además, las imágenes 1 a 4 se han tomado con una cámara de gran calidad, mientras que la imagen 5 cuenta con una resolución mucho menor. Se busca también estudiar que efecto tiene la resolución de la imagen y su calidada en la eliminación de ruido.
 ```{r}
 # Visualizamos las imagenes originales 
+par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
 
-#par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
-
-# for (img in nombres_images) {
-#   display(Image(images[[img]], colormode = "Color"), method = "r")
-#   title(paste('Imagen', img))
-# }
+ for (img in nombres_images) {
+   display(Image(images[[img]], colormode = "Color"), method = "r")
+   title(paste('Imagen', img))
+ }
 ```
+
 
 ## Inclusión de ruido sintético en las imágenes
 
-Se crean la función `add_noise_to_image` y `NOISE_TYPES` para añadir el ruido a las imágenes. 
+Se crean la función `add_noise_to_image` y `NOISE_TYPES` para añadir el ruido a las imágenes. Los ruidos que se han generado, con parámetros ajustables a variar, son los siguientes:
 
-Explicar tipos de ruido!!!
+- Ruido gaussiano de media 0 y desviación típica ajustable.
+- Ruidos sinusoidales de alta y baja frecuencia.
+- Ruido sal y pimienta: Este tipo de ruido sustituye píxeles aleatorios en la imagen por valores mínimos (negros) o máximos (blancos), simulando un patrón de puntos oscuros y brillantes
+- Ruido gamma multiplicativo: multiplica el valor de los píxeles por una distribución gamma.
+- Ruido uniforme multiplicativo: multiplica el valor de los píxeles por una distribución uniforme.
+
+Estos ruidos sintéticos pueden imitar ruidos que se encuentren en imágenes reales. Por ejemplo, el ruido sinusoidal introduce un patrón periódico de oscilaciones que pueden simular interferencias periódicas. Otro ejemplo es el ruido sal y pimienta, que puede simular fallos en la captura de las imágenes (la aparición de puntos blancos y negros).
 
 ```{r, fig.height = 4}
 # Definición de tipos de ruido
@@ -380,24 +387,14 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
   return(noisy_image_array)
 }
 
-
-# Aplicar los diferentes tipos de ruido a cada imagen
-
-# add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
-# add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
-# add_noise_to_image("3", "sinusoidal_low", list(frequency = 2, amplitude = 0.2))
-# add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
-# add_noise_to_image("5", "gamma", list(looks = 2))
-# add_noise_to_image("5", "uniform_multiplicative", list(looks = 2))
-
-
 ```
 
 
 
 
 ## Función imwd
-El uso de la Transformada Discreta de Wavelet (DWT) permite separar las frecuencias bajas de las frecuencias altas (que suelen contener el ruido).
+
+El uso de la Transformada Discreta de Wavelet (DWT) permite separar las frecuencias bajas de las frecuencias altas (que son las que suelen contener el ruido).
 
 Se aplica la DWT en una imagen \( f(x, y) \) de tamaño \( M \times N \) con filtros paso-bajo y paso-alto en cada dimensión:
 
@@ -432,11 +429,41 @@ $$
 f_{HH}(x, y) = H_2(f(x, y)) * V_2(f(x, y))
 $$
 
+**Umbral Universal**
 
-Para aplicar el algoritmo de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo.
+El umbral "universal", propuesta por Donoho y Johnstone. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. Este enfoque tiene como objetivo establecer un umbral de manera que se eliminen los coeficientes de wavelet que corresponden al ruido, mientras se conservan aquellos que contienen la señal significativa.
+La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log nd}$$ donde $\sigma$ es una estimación del ruido y *nd* es el número de coeficientes en la subbanda de detalles correspondiente a un nivel de la transformada wavelet. Este valor se obtiene accediendo a los coeficientes de la subbanda D de cada nivel.
 
+**Umbral FDR**
+
+La tasa de falsos positivos (FDR) es una técnica estadística utilizada para controlar la tasa de falsos positivos en el proceso de selección de coeficientes relevantes, tal como se describe en el trabajo de Abramovich y Benjamini (1996). En el contexto de la reducción de ruido mediante la Transformada Wavelet, el objetivo principal de FDR es identificar y eliminar los coeficientes asociados al ruido, mientras se preservan aquellos que contienen información significativa, como bordes, texturas o detalles importantes de la imagen. Esto se logra calculando, para cada coeficiente de la transformada, la probabilidad de que dicho coeficiente sea un falso positivo, es decir, que corresponda a ruido pero sea erróneamente considerado relevante.
+
+**Metodología**
+
+Una vez estimado el nivel de ruido, se calcula para cada coeficiente de wavelet la probabilidad \( p \) de que ese coeficiente sea ruido, utilizando la fórmula:
+
+\[
+p = 2 \left( 1 - \Phi \left( \frac{|d|}{\text{noise.level}} \right) \right)
+\]
+
+donde:
+
+\( |d| \) es el valor absoluto del coeficiente \( d \) de la subbanda de detalles.
+
+\( \text{noise.level} \) es la desviación estándar de los coeficientes de esa subbanda.
+
+\( \Phi \) es la función de distribución acumulada de la normal estándar, que nos da la probabilidad de que un valor \( d \) dado provenga del ruido (asumido como una distribución normal).
+
+**Umbralización según FDR**
+
+El valor calculado de \( p \) da una medida de la probabilidad de que un coeficiente sea ruido. A continuación, se define un umbral para la tasa de descubrimientos falsos, denotada por \( Q \), que establece el límite máximo aceptable para la probabilidad de falso positivo. Con un \( Q = 0.05 \), esto significa que se permitirá un máximo del 5% de coeficientes de ruido que se consideren erróneamente relevantes.
+
+Los coeficientes cuya probabilidad \( p \) sea mayor que el umbral calculado se eliminan (se consideran ruido y se establecen a cero), mientras que aquellos con \( p \) menor que el umbral se conservan, ya que se consideran significativos (es decir, pertenecen a la señal de la imagen).
+
+Para aplicar el algoritmo de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada cuyas dimensiones sean potencia de dos. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo, por lo que debemos realizar un pre-procesamiento de las imágenes. Se han escogido 2 maneras distintas para obtener imágenes con el tamaño adecuado. Por un lado, redimensionaremos las imágenes con la función `resize`, lo que podría conllevar problemas de distorsión si las imágenes estaban lejos de tener dimensiones cuadradas. Por ello, también vamos a emplear otra técnica y rellenaremos las matrices de las imágenes con valores de 0 ó 1 hasta alcanzar las dimensiones adecuadas. Observamos los problemas que surguen en cada caso y trataremos de solucionarlos de distintas maneras.
 
 ### Redimensionando las imágenes
+
 
 Como ya se ha visto para poder aplicar la función `imwd()`es necesario partir de una matriz cuadrada cuyas dimensiones sean potencia de dos. Por ello, en primer lugar creamos una función `resize_imwd()` tal que dada una foto busca la submatriz cuadrada y potencia de dos más grande posible y a continuacón redimensiona la imagen a dicha submatriz cuadrada.
 
@@ -487,6 +514,7 @@ return(foto_resized)
 ```
 
 Comenzamos generando una función `procesar_imagen_wavelet` con parámetros foto, tipo y policy. Esta función realiza en primer lugar la transformada wavelet a cada uno de los tres canales de una imagen. A continuación, se realiza el thresholding con la función threshold, pudiendo variar de el tipo de "hard" a "soft" y el parámetro policy (modificando adecuadamente los parámetros necesarios en la función threshold en este último caso). Una vez realizada la eliminación de ruido, se aplica la trasnformada wavelet inversa `imwr` para por último reconstruir la imagen a partir de los tres canales.
+
 ```{r}
 procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
   # 1. Realizamos la transformada wavelet a cada canal
@@ -646,7 +674,7 @@ procesar_imagen_wavelet_sinusoidal <- function(foto, tipo = "hard", policy = "un
 images_sin_ruido_sinusoidal<- lapply(images_recortadas, procesar_imagen_wavelet_sinusoidal, tipo ="soft", policy = "manual")
 ```
 
-Con un valor de umbral de 4 y variando el tipo a "soft", observamos que hemos conseguido eliminar el ruido sinusoidal de alta frecuencia, pero pagando un precio muy alto: los bordes de la imágen se disorsionan completamente y tenemos una muy baja resolución. Por otro lado, el ruido de frecuencia baja, aunque ha disminuido, claramente sigue presente en la imagen. El umbral necesario para eliminarlo con este método es tan alto que distorsionaría la imagen casi por completo.
+Con un valor de umbral de 4 y variando el tipo a "soft", observamos que hemos conseguido eliminar el ruido sinusoidal de alta frecuencia, pero pagando un precio muy alto: los bordes de la imagen se disorsionan completamente y tenemos una muy baja resolución. Por otro lado, el ruido de frecuencia baja, aunque ha disminuido, claramente sigue presente en la imagen. El umbral necesario para eliminarlo con este método es tan alto que distorsionaría la imagen casi por completo.
 ```{r}
 par(mfrow = c(2, 2), cex = 0.5)
 
@@ -729,6 +757,8 @@ rm(images_recortadas, images_sin_ruido, images_sin_ruidos)
 ```
 
 ### Ampliando las imágenes
+
+Vamos ha emplear ahora el otro método: aumentando la matriz con 0 ó 1 hasta el tamaño adecuado para poder aplicar la función `imwd`. Comenzamos generando las imágenes con ruido. Se elige la foto con menor resolución (imagen 5) porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas debido a que la matriz se hace demasiado grande. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
 ```{r,echo=FALSE}
 gaussian_noise_5<-add_noise_to_image("5", "gaussian", list(std_dev = 0.5))
 sinu_high_noise_5<-add_noise_to_image("5", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
@@ -745,9 +775,6 @@ imagen_noise <- list(gaussian_noise_5,sinu_high_noise_5,sinu_low_noise_5,salt_pe
 names(imagen_noise) <- c('Noise: gaussian', 'Noise: sinusoidal_high','Noise: sinusoidal_low','Noise: salt_pepper', 
                          'Noise: gamma', 'Noise: unif')
 ```
-
-
-**Función para hacer cuadrada la imagen.**
 
 Se genera una función que ajusta cualquier imagen rectangular a un tamaño cuadrado, manteniendo sus proporciones originales al agregar relleno si es necesario. Esta transformación asegura que la imagen sea compatible con el algoritmo IMWD.
 
@@ -769,10 +796,7 @@ hacer_cuadrada_potencia_2 <- function(imagen) {
 
 ```
 
-
-**Cargar imagenes en la función cuadrada**
-
-Se elige la foto con menor resolución porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
+Aplicamos esta función a la imagen 5 con los distintos tipos de ruido.
 
 ```{r,echo=FALSE}
 fotos_cuadradas <- lapply(imagen_noise, hacer_cuadrada_potencia_2)
@@ -796,66 +820,6 @@ mtext(names(fotos_cuadradas)[i], side = 3, line = 1.5, cex = 1)
 #par(mfrow = c(1, 1))
 
 ```
-
-
-### Umbral Universal
-
-El umbral "universal", propuesta por Donoho y Johnstone. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. Este enfoque tiene como objetivo establecer un umbral de manera que se eliminen los coeficientes de wavelet que corresponden al ruido, mientras se conservan aquellos que contienen la señal significativa.
-La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log nd}$$ donde $\sigma$ es una estimación del ruido y *nd* es el número de coeficientes en la subbanda de detalles correspondiente a un nivel de la transformada wavelet. Este valor se obtiene accediendo a los coeficientes de la subbanda D de cada nivel.
-
-### Umbral FDR
-
-La tasa de falsos positivos (FDR) es una técnica estadística utilizada para controlar la tasa de falsos positivos en el proceso de selección de coeficientes relevantes, tal como se describe en el trabajo de Abramovich y Benjamini (1996). En el contexto de la reducción de ruido mediante la Transformada Wavelet, el objetivo principal de FDR es identificar y eliminar los coeficientes asociados al ruido, mientras se preservan aquellos que contienen información significativa, como bordes, texturas o detalles importantes de la imagen. Esto se logra calculando, para cada coeficiente de la transformada, la probabilidad de que dicho coeficiente sea un falso positivo, es decir, que corresponda a ruido pero sea erróneamente considerado relevante.
-
-**Metodología**
-
-Una vez estimado el nivel de ruido, se calcula para cada coeficiente de wavelet la probabilidad \( p \) de que ese coeficiente sea ruido, utilizando la fórmula:
-
-\[
-p = 2 \left( 1 - \Phi \left( \frac{|d|}{\text{noise.level}} \right) \right)
-\]
-
-donde:
-
-\( |d| \) es el valor absoluto del coeficiente \( d \) de la subbanda de detalles.
-
-\( \text{noise.level} \) es la desviación estándar de los coeficientes de esa subbanda.
-
-\( \Phi \) es la función de distribución acumulada de la normal estándar, que nos da la probabilidad de que un valor \( d \) dado provenga del ruido (asumido como una distribución normal).
-
-**Umbralización según FDR**
-
-El valor calculado de \( p \) da una medida de la probabilidad de que un coeficiente sea ruido. A continuación, se define un umbral para la tasa de descubrimientos falsos, denotada por \( Q \), que establece el límite máximo aceptable para la probabilidad de falso positivo. Con un \( Q = 0.05 \), esto significa que se permitirá un máximo del 5% de coeficientes de ruido que se consideren erróneamente relevantes.
-
-Los coeficientes cuya probabilidad \( p \) sea mayor que el umbral calculado se eliminan (se consideran ruido y se establecen a cero), mientras que aquellos con \( p \) menor que el umbral se conservan, ya que se consideran significativos (es decir, pertenecen a la señal de la imagen).
-
-
-```{r,echo=FALSE}
-
-procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
-  lwd <- lapply(1:3, function(canal) {
-    imwd(foto[,,canal])  
-  })
-  
-  # 2. Aplicamos el umbral a los coeficientes de la transformada wavelet
-  lwd_threshold <- lapply(lwd, function(canal_wd) {
-    niveles <- canal_wd$nlevels
-    wavethresh::threshold(canal_wd, levels = 3:(niveles-1), type = tipo, policy = policy,by_level=TRUE,compression=FALSE)
-  })
-  # 3. Aplicamos la transformada wavelet inversa a cada canal umbralizado
-  ilwd <- lapply(lwd_threshold, function(canal_umbralizado) {
-    wavethresh::imwr(canal_umbralizado)  # Transformada wavelet inversa
-  })
-  
-  # 4. Reconstruir la imagen combinando los tres canales procesados
-  imagen_reconstruida <- abind::abind(ilwd[[1]], ilwd[[2]], ilwd[[3]], along = 3)
-    imagen <- Image(imagen_reconstruida, colormode = 'Color')
-  
-  return(imagen)
-}
-```
-
-
 
 ```{r,echo=FALSE}
 
@@ -936,7 +900,7 @@ Eliminar Ruido Sinusoidal high
 suppressMessages(imprimir(2))
 ```
 
-Eliminar Ruido Sinusoidal low 
+Eliminar Ruido Sinusoidal low http://localhost:10497/session/preview.png?viewer_pane=1&capabilities=1&host=http%3A%2F%2F127.0.0.1%3A29683
 ```{r,echo=FALSE}
 suppressMessages(imprimir(3))
 ```
@@ -1040,15 +1004,15 @@ imprimir_ajustes <- function(i) {
 ```
 
 
+```{r}
+rm(gamma_noise_5,gaussian_noise_5, salt_pepper_noise_5,sinu_high_noise_5,sinu_low_noise_5,unif_noise_5,hacer_cuadrada_potencia_2,procesar_imagen_wavelet_sinusoidal, procesar_imagen_wavelet, resize_imwd, resize_imwd_to_original, imprimir, fotos_cuadradas, imagen_noise)
+```
 
-
-
-El primer método que emplearemos para la eliminación de ruido es el algoritmo de Mallat a través de 
-la función `imwd`. Antes de poder aplicar esta función, necessitames realizar un pre-procesamiento a las imágenes, ya que 
-este algoritmo necesita una matriz cuadrada cuyas dimensiones sean potencia de dos. Se han escogido 2 maneras distintas para obtener imágenes con el tamaño adecuado. Por un lado, redimensionaremos las imágenes con la función `resize`, lo que podría conllevar problemas de distorsión si las imágenes estaban lejos de tener dimensiones cuadradas. Por ello, también vamos a emplear otra técnica y rellenaremos las matrices de las imágnes con valores de 0 hasta alcanzar las dimensiones adecuadas. Observamos los problemas que surguen en cada caso y trataremos de solucionarlos de distintas maneras.
 
 
 ## Función denoise.dwt.2d
+
+En segundo lugar, vamos a emplear la función `denoise.dwt.2d`, un método más directo que realiza la transformada wavelet, el thresholding y la transformada inversa en esta función ya implementada en R. A continuación se muestran los distintos filtros wavelet que se pueden escoger como parámetros de esta función.
 
 
 ```{r}
@@ -1089,7 +1053,7 @@ rm(max_val)
 rm(y_lim)
 ```
 
-Dado que se han realizado múltiples pruebas y los resultados son muy similares, se muestran solo aquellos resultados relevantes.
+Dado que se han realizado múltiples pruebas y los resultados son muy similares, se muestran solo aquellos que se han considerado más relevantes.
 
 ```{r}
 nivel <- c(2, 3, 4)
@@ -1101,7 +1065,7 @@ Primero, mostramos el resultado del proceso de denoising de la imagen 1, a la qu
 
 ```{r}
 
-# para evitar largos tiempos de procesado, se generaron las imagenes y se almacenaron en la carpeta denoisedwt2d, y serán las imagenes guardadas las que se muestren en el markdown (para no generarlas cada vez)
+# Para evitar largos tiempos de procesado, se generaron las imágenes y se almacenaron en la carpeta denoisedwt2d, y serán las imagenes guardadas las que se muestren en el markdown.
 
 # png("denoisedwt2d/gaussian.png", width = 800, height = 400)
 # 
@@ -1189,10 +1153,10 @@ include_graphics("denoisedwt2d/sinhigh.png")
 include_graphics("denoisedwt2d/sinhigh_denoised.png")
 
 ```
-En este caso, vemos que en ninguno de los casos logramos eliminar completamente el ruido sinusoidal. Esto puede deberse a que este tipo de ruido presenta componentes muy específicas de alta frecuencia, que pueden coincidir con las frecuencias de los detalles importantes de la imagen, lo que dificulta eliminar el ruido sin comprometer los detalles de la imagen. 
+En este caso, vemos que en ninguno de los casos logramos eliminar completamente el ruido sinusoidal. Esto puede deberse a que este tipo de ruido presenta componentes muy específicas de alta frecuencia, que pueden coincidir con las frecuencias de los detalles importantes de la imagen, lo que dificulta eliminar el ruido sin comprometer los detalles de la imagen. El ruido sinusoidal era también el más complicado de eliminar cuándo aplicabamos la función `imwd` y `threshold`.
 
 
-```{r}
+```{r, echo = FALSE}
 # png("denoisedwt2d/sinlow.png", width = 800, height = 400)
 # 
 # i_sinruido <- images[[3]]
@@ -1280,7 +1244,7 @@ En este caso, de nuevo las diferencias más notables de deben a los distintos ni
 
 * El filtro wavelet empleado: El rendimiento con el filtro d4 es inferior al de otros filtros. Esto se debe a que el filtro d4 es un filtro corto (con solo 4 coeficientes) y tiene una resolución de frecuencia limitada. Como resultado, no puede capturar eficazmente los picos abruptos del ruido, como los valores 0 y 1 del ruido salt and pepper.
 
-```{r}
+```{r, echo = FALSE}
 # png("denoisedwt2d/gamma.png", width = 800, height = 400)
 # 
 # i_sinruido <- images[[1]]
@@ -1320,7 +1284,7 @@ En este caso, de nuevo las diferencias más notables de deben a los distintos ni
 
 ```
 
-```{r}
+```{r, echo = FALSE}
 # png("denoisedwt2d/multiplicative.png", width = 800, height = 400)
 # 
 # i_sinruido <- images[[2]]
@@ -1406,10 +1370,14 @@ include_graphics("denoisedwt2d/image5_denoised.png")
 La diferencia más notable en comparación con el resto de resultados, es que en este caso, al aumentar el numero de niveles de descomposición a un número que nos permita eliminar la mayor parte del ruido, la calidad de la imagen se ve significativamente afectada, y obtenemos una imagen excesivamente suavizada. Esto puede deberse a que a medida que aumentan los niveles de descomposición, la imagen se descompone en frecuencias cada vez más altas, provocando la pérdida de detalles finos.
 
 La baja resolución de la imagen hace que sea más difícil mantener un equilibrio entre la eliminación del ruido y la preservación de los detalles. Al aumentar los niveles de descomposición, el ruido se elimina en mayor medida, pero también se pierde mucha información útil.
+```{r, echo = FALSE}
+rm(filtro, nivel, umbral, wavelt_filter)
+```
 
 
 ## Función fftshift
 
+Por último, vamos a ver que es lo que ocurre cuando en lugar de transformadas wavelet empleamos transformadas de fourier.
 ```{r}
 imgr_1 <- add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
 imgr_2 <- add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
@@ -1427,7 +1395,7 @@ p_load(gsignal, fields)
 ### Imagen 1 y ruido gaussiano
 
 
-```{r echo=F}
+```{r, echo=F}
 # CANAL ROJO
 
 fft1_r <- fft(imgr_1[,,1])
@@ -1459,7 +1427,7 @@ spectr1_b <- 20*log10(Mod(fshift1_b))
 # fields::image.plot(spectr1_b)
 ```
 
-```{r echo=F}
+```{r, echo=F}
 
 # CANAL ROJO
 
@@ -1502,7 +1470,7 @@ spectr_shifted1_b <- 20*log10(Mod(fshift1_b))
 
 ```
 
-```{r echo=F}
+```{r, echo=F}
 fft1mod_r <- gsignal::ifftshift(fshift1_r, MARGIN = c(1,2))
 img_1_r <- Re(fft(fft1mod_r, inverse = T)) / prod(dim(fft1mod_r))
 fft1mod_g <- gsignal::ifftshift(fshift1_g, MARGIN = c(1,2))
@@ -1523,7 +1491,7 @@ plot(Image((imgr_1), colormode = "Color"))
 plot(Image((img_1), colormode = "Color"))
 ```
 
-### Imagen 2 y ruido sinusoidal alto
+### Imagen 2 y ruido sinusoidal alto 
 
 
 ```{r echo=F}
