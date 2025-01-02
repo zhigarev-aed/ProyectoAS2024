@@ -51,6 +51,11 @@ language:
     solution: 'Solución. '
 ---
 
+```{r,include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(echo=TRUE,fig.align='center',out.width = '100%')
+```
+
 # Introducción  
 
 En el campo del análisis de señales, uno de los problemas más relevantes es la eliminación de ruido en imágenes digitales. Las señales, que representan variaciones de magnitudes en el espacio y/o tiempo, a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
