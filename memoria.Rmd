@@ -53,7 +53,7 @@ language:
 
 ```{r,include=FALSE}
 rm(list = ls())
-knitr::opts_chunk$set(echo=TRUE,fig.align='center',out.width = '100%')
+knitr::opts_chunk$set(echo=FALSE,fig.align='center',out.width = '100%')
 ```
 
 # Introducción  
@@ -456,7 +456,7 @@ Para aplicar el algoritmo de Mallat (IMWD), es necesario que la imagen tenga una
 
 Como ya se ha visto para poder aplicar la función `imwd()`es necesario partir de una matriz cuadrada cuyas dimensiones sean potencia de dos. Por ello, en primer lugar creamos una función `resize_imwd()` tal que dada una foto busca la submatriz cuadrada y potencia de dos más grande posible y a continuacón redimensiona la imagen a dicha submatriz cuadrada.
 
-```{r}
+```{r,echo=TRUE}
 # Pre-procesamiento al aplicado de función imwd (algoritmo de Mallat).
 # Redimensionamiento de la imagen 
 
@@ -556,7 +556,7 @@ Una vez tenemos las imágenes con ruido generadas y redimensionadas adecuadament
 ```{r}
 images_sin_ruido_gaussiano <- lapply(images_recortadas, procesar_imagen_wavelet)
 ```
-Finalmente, visualizamos los resultados. Primeramente, observamos las imágenes redimensionadas con ruido y la imagen obtenida tras el uso del método de thresholding para la eliminación de este. Observamos una principal diferencia entre ambas: la foto que contaba con menor resolución presenta también el peor resultado. Aunque el ruido haya sido eliminadom, sus bordes están más difuminados y tiene muy baja calidad.
+Finalmente, visualizamos los resultados. Primeramente, observamos las imágenes redimensionadas con ruido y la imagen obtenida tras el uso del método de thresholding para la eliminación de este. Observamos una principal diferencia entre ambas: la foto que contaba con menor resolución presenta también el peor resultado. Aunque el ruido haya sido eliminado, sus bordes están más difuminados y tiene muy baja calidad.
 
 ```{r}
 par(mfrow = c(2, 2), cex = 0.5)
@@ -767,7 +767,7 @@ names(imagen_noise) <- c('Noise: gaussian', 'Noise: sinusoidal_high','Noise: sin
 
 Se genera una función que ajusta cualquier imagen rectangular a un tamaño cuadrado, manteniendo sus proporciones originales al agregar relleno si es necesario. Esta transformación asegura que la imagen sea compatible con el algoritmo IMWD.
 
-```{r}
+```{r,echo=TRUE}
 hacer_cuadrada_potencia_2 <- function(imagen) {
   n_filas <- dim(imagen)[1]
   n_columnas <- dim(imagen)[2]
@@ -791,20 +791,32 @@ Aplicamos esta función a la imagen 5 con los distintos tipos de ruido.
 fotos_cuadradas <- lapply(imagen_noise, hacer_cuadrada_potencia_2)
 ```
 
+Podemos ver que las imagenes aumentan de tamaño
+
+Imagen con ruido:
+```{r,echo=TRUE}
+str(imagen_noise)
+```
+
+Imagen con ruido y aplicada la función cuadrada:
+```{r,echo=TRUE}
+str(fotos_cuadradas)
+```
 
 ```{r,echo=FALSE}
-par(mfrow = c(1, 2))  # 1 fila, 2 columnas
+# Mostrar imagebes
+#par(mfrow = c(1, 2))  # 1 fila, 2 columnas
 
 # Mostrar la foto original
-foto_original<-hacer_cuadrada_potencia_2(images[[5]])
+#foto_original<-hacer_cuadrada_potencia_2(images[[5]])
 
-EBImage::display(Image(foto_original, colormode = 'Color'), method = 'r')
-mtext("Imagen aumentada en potencia 2", side = 3, line = 1.5, cex = 1)
+#EBImage::display(Image(foto_original, colormode = 'Color'), method = 'r')
+#mtext("Imagen aumentada en potencia 2", side = 3, line = 1.5, cex = 1)
 
-i=1
+#i=1
 
-EBImage::display(Image(fotos_cuadradas[[i]], colormode = 'Color'), method = 'r')
-mtext(names(fotos_cuadradas)[i], side = 3, line = 1.5, cex = 1)
+#EBImage::display(Image(fotos_cuadradas[[i]], colormode = 'Color'), method = 'r')
+#mtext(names(fotos_cuadradas)[i], side = 3, line = 1.5, cex = 1)
 
 #par(mfrow = c(1, 1))
 
@@ -820,8 +832,11 @@ mtext(names(fotos_cuadradas)[i], side = 3, line = 1.5, cex = 1)
 #}
 ```
 
+ Una vez tenemos las imágenes con ruido generadas y ampliadas en potencia de 2 en este caso de 2.048x2.048 pixeles, aplicamos la función imwd a cada uno de los tres canales (R, G y B). Empleamos la función procesar_imagen_wavelet que devuelve las imágenes reconstruidas después del thresholding.
+ 
+ Se presentan las imagenes sin el relleno para que sea más facil de visualizar. Aplicamos  en cada ruido dos umbrales diferentes Universal y fdr,
 
-```{r,echo=FALSE}
+```{r,echo=TRUE}
 suppressMessages(library(EBImage))
 
 library(magick)
@@ -836,7 +851,7 @@ img_magick1_recortada <- image_crop(img_magick1, "1600x1060+10+10")
 
 # Dibujar el título sobre la imagen recortada
 img_magick1_recortada <- image_draw(img_magick1_recortada)
-text(x = 220, y = 20, labels = paste0(names(fotos_cuadradas)[i]), col = "white", cex = 4)  # Ajusta la posición y el tamaño
+text(x = 320, y = 20, labels = paste0(names(fotos_cuadradas)[i]), col = "white", cex = 5)  # Ajusta la posición y el tamaño
 dev.off()  # Termina de dibujar en la imagen
 
 # Puedes continuar con el mismo proceso para las otras imágenes
@@ -851,7 +866,7 @@ img_magick2_recortada <- image_crop(img_magick2, "1600x1060+10+10")
 
 # Dibujar el título sobre la imagen recortada
 img_magick2_recortada <- image_draw(img_magick2_recortada)
-text(x = 220, y = 20, labels = "Wavelet - Universal", col = "white", cex = 4) 
+text(x = 320, y = 20, labels = "Wavelet - Universal", col = "white", cex = 5) 
 dev.off()
 
 ruido1_fdr <- procesar_imagen_wavelet(fotos_cuadradas[[i]], tipo = "hard", policy = "fdr")
@@ -863,7 +878,7 @@ img_magick3_recortada <- image_crop(img_magick3, "1600x1060+10+10")
 
 # Dibujar el título sobre la imagen recortada
 img_magick3_recortada <- image_draw(img_magick3_recortada)
-text(x = 220, y = 20, labels = "Wavelet - FDR", col = "white", cex = 4) 
+text(x = 320, y = 20, labels = "Wavelet - FDR", col = "white", cex = 5) 
 dev.off()
 
 # Combinar las tres imágenes recortadas
@@ -873,6 +888,8 @@ imagen_combinada_recortada <- image_append(c(img_magick1_recortada, img_magick2_
 return(imagen_combinada_recortada)
 }
 ```
+
+
 
 Se observa que el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal. Esto se debe a que el FDR estima la probabilidad de que un coeficiente de wavelet provenga del ruido, basándose en la distribución normal. Al asumir que el ruido sigue una distribución gaussiana, el FDR puede ajustar el umbral de manera más dinámica, lo que le permite identificar y eliminar los coeficientes ruidosos con mayor precisión, al tiempo que preserva los detalles relevantes de la imagen. En cambio, el umbral Universal utiliza un umbral fijo basado en el tamaño de la señal, lo que no captura completamente la variabilidad del ruido. Como resultado, el FDR podría ofrecer una eliminación de ruido más adaptativa, ayudando a preservar mejor los detalles de la imagen, aunque la diferencia en la práctica no siempre sea marcadamente significativa.
 
@@ -889,7 +906,7 @@ Eliminar Ruido Sinusoidal high
 suppressMessages(imprimir(2))
 ```
 
-Eliminar Ruido Sinusoidal low http://localhost:10497/session/preview.png?viewer_pane=1&capabilities=1&host=http%3A%2F%2F127.0.0.1%3A29683
+Eliminar Ruido Sinusoidal low 
 ```{r,echo=FALSE}
 suppressMessages(imprimir(3))
 ```
@@ -993,9 +1010,7 @@ imprimir_ajustes <- function(i) {
 ```
 
 
-```{r}
-rm(gamma_noise_5,gaussian_noise_5, salt_pepper_noise_5,sinu_high_noise_5,sinu_low_noise_5,unif_noise_5,hacer_cuadrada_potencia_2,procesar_imagen_wavelet_sinusoidal, procesar_imagen_wavelet, resize_imwd, resize_imwd_to_original, imprimir, fotos_cuadradas, imagen_noise)
-```
+
 
 
 
