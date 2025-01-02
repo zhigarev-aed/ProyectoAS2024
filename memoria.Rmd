@@ -834,7 +834,8 @@ str(fotos_cuadradas)
 
  Una vez tenemos las imágenes con ruido generadas y ampliadas en potencia de 2 en este caso de 2.048x2.048 pixeles, aplicamos la función imwd a cada uno de los tres canales (R, G y B). Empleamos la función procesar_imagen_wavelet que devuelve las imágenes reconstruidas después del thresholding.
  
- Se presentan las imagenes sin el relleno para que sea más facil de visualizar. Aplicamos  en cada ruido dos umbrales diferentes Universal y fdr,
+ Aplicamos en cada ruido dos umbrales diferentes Universal y fdr y un umbral tipo 'hard'. Presentamos las imagenes sin el relleno para que sea más facil de visualizar y ocupamos una función del paquete magick para juntar 3 imagenes y agregar título, esto lo hacemos en la función `imprimir`. 
+ 
 
 ```{r,echo=TRUE}
 suppressMessages(library(EBImage))
@@ -889,44 +890,50 @@ return(imagen_combinada_recortada)
 }
 ```
 
-
-
-Se observa que el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal. Esto se debe a que el FDR estima la probabilidad de que un coeficiente de wavelet provenga del ruido, basándose en la distribución normal. Al asumir que el ruido sigue una distribución gaussiana, el FDR puede ajustar el umbral de manera más dinámica, lo que le permite identificar y eliminar los coeficientes ruidosos con mayor precisión, al tiempo que preserva los detalles relevantes de la imagen. En cambio, el umbral Universal utiliza un umbral fijo basado en el tamaño de la señal, lo que no captura completamente la variabilidad del ruido. Como resultado, el FDR podría ofrecer una eliminación de ruido más adaptativa, ayudando a preservar mejor los detalles de la imagen, aunque la diferencia en la práctica no siempre sea marcadamente significativa.
+Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar el ruido, los cambios no son tan notorios como en otras imágenes
 
 Eliminar Ruido Gaussiano
 
+ Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
 ```{r,echo=FALSE}
 suppressMessages(imprimir(1))
 ```
 
                          
 Eliminar Ruido Sinusoidal high 
+ Al igual que en el ruido gaussiano, se observa que al eliminar el ruido sinusoidal alto el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
 
 ```{r,echo=FALSE}
 suppressMessages(imprimir(2))
 ```
 
 Eliminar Ruido Sinusoidal low 
+En este caso es muy dificil observar diferencias
 ```{r,echo=FALSE}
 suppressMessages(imprimir(3))
 ```
 
+En los siguientes 3 tipos de ruidos salt and pepper, uniforme y gamma funciona bien el umbral fdr, 
+
 Eliminar Ruido Salt and pepper 
+
 ```{r,echo=FALSE}
 suppressMessages(imprimir(4))
 ```
 
-Eliminar Ruido uniforme 
+Eliminar Ruido gamma
 ```{r,echo=FALSE}
 suppressMessages(imprimir(5))
 ```
 
 
-Eliminar  Ruido gamma 
+Eliminar  Ruido uniforme
 ```{r,echo=FALSE}
 suppressMessages(imprimir(6))
 ```
 
+
+El umbral Universal utiliza un umbral fijo basado en el tamaño de la señal, lo que no captura completamente la variabilidad del ruido, en cambio FDR estima la probabilidad de que un coeficiente de wavelet provenga del ruido. Como resultado, el FDR podría ofrecer una eliminación de ruido más adaptativa, ayudando a preservar mejor los detalles de la imagen.
 
 
 ```{r,echo=FALSE}
