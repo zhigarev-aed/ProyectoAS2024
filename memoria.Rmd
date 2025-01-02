@@ -433,40 +433,25 @@ $$
 f_{HH}(x, y) = H_2(f(x, y)) * V_2(f(x, y))
 $$
 
+**Umbrales** 
+Se cambiara el parámetro policy de la función explicada anteriormente: threshold(), el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual
+
 **Umbral Universal**
 
-El umbral "universal", propuesta por Donoho y Johnstone. Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. Este enfoque tiene como objetivo establecer un umbral de manera que se eliminen los coeficientes de wavelet que corresponden al ruido, mientras se conservan aquellos que contienen la señal significativa.
+El umbral "universal", fue propuesto por Donoho y Johnstone(1995). Esta estrategia calcula el umbral aplicado a los coeficientes de wavelet en función del tamaño de la señal y una estimación del nivel de ruido. Este enfoque tiene como objetivo establecer un umbral de manera que se eliminen los coeficientes de wavelet que corresponden al ruido, mientras se conservan aquellos que contienen la señal significativa.
 La fórmula del umbral "universal" es $$ \sigma \sqrt{2 \log nd}$$ donde $\sigma$ es una estimación del ruido y *nd* es el número de coeficientes en la subbanda de detalles correspondiente a un nivel de la transformada wavelet. Este valor se obtiene accediendo a los coeficientes de la subbanda D de cada nivel.
 
 **Umbral FDR**
 
 La tasa de falsos positivos (FDR) es una técnica estadística utilizada para controlar la tasa de falsos positivos en el proceso de selección de coeficientes relevantes, tal como se describe en el trabajo de Abramovich y Benjamini (1996). En el contexto de la reducción de ruido mediante la Transformada Wavelet, el objetivo principal de FDR es identificar y eliminar los coeficientes asociados al ruido, mientras se preservan aquellos que contienen información significativa, como bordes, texturas o detalles importantes de la imagen. Esto se logra calculando, para cada coeficiente de la transformada, la probabilidad de que dicho coeficiente sea un falso positivo, es decir, que corresponda a ruido pero sea erróneamente considerado relevante.
 
-**Metodología**
+**Umbral Manual**
 
-Una vez estimado el nivel de ruido, se calcula para cada coeficiente de wavelet la probabilidad \( p \) de que ese coeficiente sea ruido, utilizando la fórmula:
-
-\[
-p = 2 \left( 1 - \Phi \left( \frac{|d|}{\text{noise.level}} \right) \right)
-\]
-
-donde:
-
-\( |d| \) es el valor absoluto del coeficiente \( d \) de la subbanda de detalles.
-
-\( \text{noise.level} \) es la desviación estándar de los coeficientes de esa subbanda.
-
-\( \Phi \) es la función de distribución acumulada de la normal estándar, que nos da la probabilidad de que un valor \( d \) dado provenga del ruido (asumido como una distribución normal).
-
-**Umbralización según FDR**
-
-El valor calculado de \( p \) da una medida de la probabilidad de que un coeficiente sea ruido. A continuación, se define un umbral para la tasa de descubrimientos falsos, denotada por \( Q \), que establece el límite máximo aceptable para la probabilidad de falso positivo. Con un \( Q = 0.05 \), esto significa que se permitirá un máximo del 5% de coeficientes de ruido que se consideren erróneamente relevantes.
-
-Los coeficientes cuya probabilidad \( p \) sea mayor que el umbral calculado se eliminan (se consideran ruido y se establecen a cero), mientras que aquellos con \( p \) menor que el umbral se conservan, ya que se consideran significativos (es decir, pertenecen a la señal de la imagen).
-
-Para aplicar el algoritmo de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada cuyas dimensiones sean potencia de dos. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo, por lo que debemos realizar un pre-procesamiento de las imágenes. Se han escogido 2 maneras distintas para obtener imágenes con el tamaño adecuado. Por un lado, redimensionaremos las imágenes con la función `resize`, lo que podría conllevar problemas de distorsión si las imágenes estaban lejos de tener dimensiones cuadradas. Por ello, también vamos a emplear otra técnica y rellenaremos las matrices de las imágenes con valores de 0 ó 1 hasta alcanzar las dimensiones adecuadas. Observamos los problemas que surguen en cada caso y trataremos de solucionarlos de distintas maneras.
+Se fija un umbral manualmente.
 
 ### Redimensionando las imágenes
+
+Para aplicar el algoritmo de Mallat (IMWD), es necesario que la imagen tenga una forma cuadrada cuyas dimensiones sean potencia de dos. Dado que muchas imágenes no son cuadradas, es necesario convertirlas antes de aplicar el algoritmo, por lo que debemos realizar un pre-procesamiento de las imágenes. Se han escogido 2 maneras distintas para obtener imágenes con el tamaño adecuado. Por un lado, redimensionaremos las imágenes con la función `resize`, lo que podría conllevar problemas de distorsión si las imágenes estaban lejos de tener dimensiones cuadradas. Por ello, también vamos a emplear otra técnica y rellenaremos las matrices de las imágenes con valores de 0 ó 1 hasta alcanzar las dimensiones adecuadas. Observamos los problemas que surguen en cada caso y trataremos de solucionarlos de distintas maneras.
 
 
 Como ya se ha visto para poder aplicar la función `imwd()`es necesario partir de una matriz cuadrada cuyas dimensiones sean potencia de dos. Por ello, en primer lugar creamos una función `resize_imwd()` tal que dada una foto busca la submatriz cuadrada y potencia de dos más grande posible y a continuacón redimensiona la imagen a dicha submatriz cuadrada.
