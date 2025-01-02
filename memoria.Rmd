@@ -222,7 +222,6 @@ for (i in fotos_a_girar) {
 images[fotos_a_girar] <- images_rotadas
 rm(images_rotadas)
 rm(fotos_a_girar)
-rm(nombres_images)
 ```
 
 Vamos a visualizar las imágenes empleadas. Se han tomado 5 imágenes distintas pero todas con la misma temática. La elección se ha realizado pensando en poder observar como afecta la elimación de ruido detalles como la textura o defectos en las frutas. Además, las imágenes 1 a 4 se han tomado con una cámara de gran calidad, mientras que la imagen 5 cuenta con una resolución mucho menor. Se busca también estudiar que efecto tiene la resolución de la imagen y su calidada en la eliminación de ruido.
@@ -237,7 +236,7 @@ par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
 ```
 
 
-## Inclusión de ruido sintético en las imágenes
+## Inclusión de ruido sintético en las imágenes  
 
 Se crean la función `add_noise_to_image` y `NOISE_TYPES` para añadir el ruido a las imágenes. Los ruidos que se han generado, con parámetros ajustables a variar, son los siguientes:
 
