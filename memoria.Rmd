@@ -4,15 +4,15 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     echo: true
     number_sections: true
     theme: lumen
     toc: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
@@ -58,7 +58,7 @@ knitr::opts_chunk$set(echo=FALSE,fig.align='center',out.width = '100%')
 
 # Introducción  
 
-En el campo del análisis de señales, uno de los problemas más relevantes es la eliminación de ruido en imágenes digitales. Las señales, que representan variaciones de magnitudes en el espacio y/o tiempo, a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
+En el campo del análisis de señales, uno de los problemas es la eliminación de ruido en imágenes digitales. Las señales, que representan variaciones de magnitudes en el espacio y/o tiempo, a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
 
 El uso de wavelets es una herramienta clave para abordar este problema, el cual permite descomponer señales en sus componentes espaciales y frecuenciales de forma eficiente. Este método ofrece la posibilidad de adaptarse a las características particulares de cada tipo de ruido.
 
@@ -400,41 +400,7 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
 
 El uso de la Transformada Discreta de Wavelet (DWT) permite separar las frecuencias bajas de las frecuencias altas (que son las que suelen contener el ruido).
 
-Se aplica la DWT en una imagen \( f(x, y) \) de tamaño \( M \times N \) con filtros paso-bajo y paso-alto en cada dimensión:
-
-- \( H_1 \) y \( H_2 \) son los filtros paso-bajo y paso-alto en la dirección horizontal, respectivamente.
-- \( V_1 \) y \( V_2 \) son los filtros paso-bajo y paso-alto en la dirección vertical.
-
-La DWT se descompone en cuatro sub-imágenes:
-
-1. **Aproximación (LL):** Resultado de aplicar los filtros \( H_1 \) y \( V_1 \). Contiene las bajas frecuencias de la imagen, es decir, la versión suavizada de la imagen.
-   
-2. **Horizontal (LH):** Resultado de aplicar \( H_1 \) y \( V_2 \). Captura detalles horizontales, como bordes verticales.
-
-3. **Vertical (HL):** Resultado de aplicar \( H_2 \) y \( V_1 \). Captura detalles verticales, como bordes horizontales.
-
-4. **Diagonal (HH):** Resultado de aplicar \( H_2 \) y \( V_2 \). Captura detalles diagonales, como bordes inclinados y ruido.
-
-La DWT 2D se expresa matemáticamente como:
-
-$$
-f_{LL}(x, y) = H_1(f(x, y)) * V_1(f(x, y))
-$$
-
-$$
-f_{LH}(x, y) = H_1(f(x, y)) * V_2(f(x, y))
-$$
-
-$$
-f_{HL}(x, y) = H_2(f(x, y)) * V_1(f(x, y))
-$$
-
-$$
-f_{HH}(x, y) = H_2(f(x, y)) * V_2(f(x, y))
-$$
-
-**Umbrales** 
-Se cambiara el parámetro policy de la función explicada anteriormente: threshold(), el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual
+Uno de los parametros de la funcion explicada anteriormente (threshold) es policy, el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual
 
 **Umbral Universal**
 
@@ -796,6 +762,12 @@ Podemos ver que las imagenes aumentan de tamaño
 Imagen con ruido:
 ```{r,echo=TRUE}
 str(imagen_noise)
+
+kernel_paso_alto<-matrix(c(0,-1,0,-1,5,-1,0,-1,0),nrow=3,ncol=3)
+imagen_magick <- image_read(imagen_noise[[1]])
+filtrada<-image_convolve(imagen_magick,kernel_paso_alto)
+
+image_append(c(filtrada))
 ```
 
 Imagen con ruido y aplicada la función cuadrada:
@@ -913,10 +885,9 @@ En este caso es muy dificil observar diferencias
 suppressMessages(imprimir(3))
 ```
 
-En los siguientes 3 tipos de ruidos salt and pepper, uniforme y gamma funciona bien el umbral fdr, 
+En los siguientes 3 tipos de ruidos salt and pepper, uniforme y gamma funciona bien el umbral fdr.
 
 Eliminar Ruido Salt and pepper 
-
 ```{r,echo=FALSE}
 suppressMessages(imprimir(4))
 ```
