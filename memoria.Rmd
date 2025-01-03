@@ -400,7 +400,7 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
 
 El uso de la Transformada Discreta de Wavelet (DWT) permite separar las frecuencias bajas de las frecuencias altas (que son las que suelen contener el ruido).
 
-Uno de los parametros de la funcion explicada anteriormente (threshold) es policy, el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual
+Uno de los parametros de la funcion explicada anteriormente (threshold) es policy, el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual.
 
 **Umbral Universal**
 
@@ -714,6 +714,7 @@ rm(images_recortadas, images_sin_ruido, images_sin_ruidos)
 ### Ampliando las imágenes
 
 Vamos ha emplear ahora el otro método: aumentando la matriz con 0 ó 1 hasta el tamaño adecuado para poder aplicar la función `imwd`. Comenzamos generando las imágenes con ruido. Se elige la foto con menor resolución (imagen 5) porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas debido a que la matriz se hace demasiado grande. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
+
 ```{r,echo=FALSE}
 gaussian_noise_5<-add_noise_to_image("5", "gaussian", list(std_dev = 0.5))
 sinu_high_noise_5<-add_noise_to_image("5", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
@@ -762,12 +763,6 @@ Podemos ver que las imagenes aumentan de tamaño
 Imagen con ruido:
 ```{r,echo=TRUE}
 str(imagen_noise)
-
-kernel_paso_alto<-matrix(c(0,-1,0,-1,5,-1,0,-1,0),nrow=3,ncol=3)
-imagen_magick <- image_read(imagen_noise[[1]])
-filtrada<-image_convolve(imagen_magick,kernel_paso_alto)
-
-image_append(c(filtrada))
 ```
 
 Imagen con ruido y aplicada la función cuadrada:
@@ -804,9 +799,9 @@ str(fotos_cuadradas)
 #}
 ```
 
- Una vez tenemos las imágenes con ruido generadas y ampliadas en potencia de 2 en este caso de 2.048x2.048 pixeles, aplicamos la función imwd a cada uno de los tres canales (R, G y B). Empleamos la función procesar_imagen_wavelet que devuelve las imágenes reconstruidas después del thresholding.
+ Una vez tenemos las imágenes con ruido generadas y ampliadas en potencia de 2 en este caso de 2.048x2.048 pixeles, aplicamos la función imwd a cada uno de los tres canales (R, G y B). Usando la función procesar_imagen_wavelet que devuelve las imágenes reconstruidas después del thresholding.
  
- Aplicamos en cada ruido dos umbrales diferentes Universal y fdr y un umbral tipo 'hard'. Presentamos las imagenes sin el relleno para que sea más facil de visualizar y ocupamos una función del paquete magick para juntar 3 imagenes y agregar título, esto lo hacemos en la función `imprimir`. 
+ Aplicamos en cada ruido dos tecnicas para seleccionar el umbral: Universal y fdr, además especificamos que el umbral sea 'hard'. Presentamos las imagenes sin el relleno para que sea más facil de visualizar y ocupamos una función del paquete magick para juntar tres imagenes y agregar título, esto lo hacemos en la función `imprimir`. 
  
 
 ```{r,echo=TRUE}
@@ -867,6 +862,7 @@ Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar e
 Eliminar Ruido Gaussiano
 
  Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
+ 
 ```{r,echo=FALSE}
 suppressMessages(imprimir(1))
 ```
@@ -874,7 +870,7 @@ suppressMessages(imprimir(1))
                          
 Eliminar Ruido Sinusoidal high 
  Al igual que en el ruido gaussiano, se observa que al eliminar el ruido sinusoidal alto el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
-
+ 
 ```{r,echo=FALSE}
 suppressMessages(imprimir(2))
 ```
