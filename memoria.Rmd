@@ -857,7 +857,7 @@ return(imagen_combinada_recortada)
 }
 ```
 
-Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar el ruido, los cambios no son tan notorios como en otras imágenes
+Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar el ruido, los cambios no son tan notorios como en otras imágenes.
 
 Eliminar Ruido Gaussiano
 
@@ -881,16 +881,11 @@ En este caso es muy dificil observar diferencias
 suppressMessages(imprimir(3))
 ```
 
-En los siguientes 3 tipos de ruidos salt and pepper, uniforme y gamma funciona bien el umbral fdr.
+En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina, obteniendo una imagen mejorada con FDR.
 
 Eliminar Ruido Salt and pepper 
 ```{r,echo=FALSE}
 suppressMessages(imprimir(4))
-```
-
-Eliminar Ruido gamma
-```{r,echo=FALSE}
-suppressMessages(imprimir(5))
 ```
 
 
@@ -899,8 +894,14 @@ Eliminar  Ruido uniforme
 suppressMessages(imprimir(6))
 ```
 
+En el caso de ruido gamma, no se logra una eliminación adecuada con FDR, y el método universal parece ofrecer mejores resultados.
 
-El umbral Universal utiliza un umbral fijo basado en el tamaño de la señal, lo que no captura completamente la variabilidad del ruido, en cambio FDR estima la probabilidad de que un coeficiente de wavelet provenga del ruido. Como resultado, el FDR podría ofrecer una eliminación de ruido más adaptativa, ayudando a preservar mejor los detalles de la imagen.
+Eliminar Ruido gamma
+```{r,echo=FALSE}
+suppressMessages(imprimir(5))
+```
+
+El umbral Universal emplea un valor fijo basado en el tamaño de la señal, lo que limita su capacidad para capturar completamente la variabilidad del ruido. En contraste, FDR estima la probabilidad de que un coeficiente wavelet provenga del ruido, lo que le permite adaptarse mejor a las características específicas de la señal. Como resultado, FDR puede ofrecer una eliminación de ruido más adaptativa, preservando mejor los detalles de la imagen. Por lo que, parece ser una opción más adecuada en la mayoría de los casos de ruido analizados anteriormente.
 
 
 ```{r,echo=FALSE}
@@ -982,9 +983,6 @@ imprimir_ajustes <- function(i) {
 ```{r,echo=FALSE}
 #suppressMessages(imprimir_ajustes(6))
 ```
-
-
-
 
 
 
