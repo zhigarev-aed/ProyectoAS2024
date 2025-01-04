@@ -79,16 +79,11 @@ En este trabajo, se emplearán wavelets como herramienta principal para eliminar
 
 Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.align='center', out.width='100%') 
-```
-
 ```{r, message = FALSE}
 rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick, knitr)
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick, knitr, gsignal, fields)
 ```
 
 Se ha escogido emplear tres métodologías distintas para realizar la eliminación de ruido. Dos de ellas se basan en emplear la transformada wavelet. Sin embargo, también se ha optado por emplear en un tercer método el análisis mediante transformadas de Fourier con el objetivo de encontrar similitudes y diferencias con respecto a los métodos que emplean wavelets.
@@ -193,11 +188,10 @@ Finalmente, realizaremos la descomposición de la imagen con 4 filtros wavelet d
   
 **Método 3. Transformada de Fourier (función fftshift)**
 
-(Borrador)
 
 El método usado usa la transformada rápida de fourier para poder eliminar altas frecuencias correspondientes a ruido en la imagen. La función *fftshift* desplaza las bajas frecuencias al centro del espectro y las altas a los extremos. Una vez se visualiza el espectro, se procede a disminuir la magnitud de las altas frecuencias cercanas a los extremos asignandoles una magnitud menor. Con este procedimiento estamos aplicando un filtro de paso bajo y aplicando *ifftshift* obtenemos la imagen en el dominio espacial con ruido eliminado.
 
-Además, a lo largo del trabajo se programar diversas funciones que ayudarán a autimatizar el proceso.
+Además, a lo largo de las funciones ya implementadas en R a lo largo del trabajo se programaran diversas funciones que ayudarán a automatizar el proceso.
 
 # Desarrollo y resultados
 
@@ -1351,15 +1345,11 @@ rm(filtro, nivel, umbral, wavelt_filter)
 ```
 
 
-## Función fftshift
+## Transformada de Fourier
 
 Por último, vamos a ver que es lo que ocurre cuando en lugar de transformadas wavelet empleamos transformadas de fourier.
 
-```{r, echo=F}
-p_load(gsignal, fields)
-```
-
-### Imagen 1 y ruido gaussiano
+Comenzamos probando con la imagen 1 y el ruido gaussiano. Se realiza la transformada de fourier y en el espacio de frecuencias se representan las frecuencias bajas en el centro y las altas en los extremos. El ruido, generalemente asociado a frecuencias altas, se intetará eliminar evitando reduciendo las frecuencias altas.
 
 
 ```{r echo=F}
@@ -1393,7 +1383,7 @@ n_b <- length(fft_b)
 fshift_b <- gsignal::fftshift(fft_b, MARGIN = c(1,2))
 spectr_b <- 20*log10(Mod(fshift_b))
 
-# fields::image.plot(spectr_b)
+#fields::image.plot(spectr_b)
 ```
 
 ```{r echo=F}
@@ -1464,7 +1454,7 @@ rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g,
 ```
 
 
-### Imagen 2 y ruido sinusoidal alto
+La siguiente prueba se ha realizado con la imagen 2 y ruido sinusoidal alto. Este tipo de ruido es el que más problemas generó con los otros dos métodos.
 
 
 ```{r echo=F}
@@ -1570,11 +1560,11 @@ rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g,
 
 
 
-### Imagen 5 y ruido gamma
+### Imagen 3 y ruido gamma
 
 
 ```{r echo=F}
-imgr <- add_noise_to_image("5", "gamma", list(looks = 2))
+imgr <- add_noise_to_image("3", "gamma", list(looks = 2))
 
 # CANAL ROJO
 
