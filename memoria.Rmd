@@ -78,9 +78,12 @@ En este trabajo, se emplearán wavelets como herramienta principal para eliminar
 # Funciones de programacion empleadas 
 
 Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
+```{r}
+rm(list = ls())
+```
+
 
 ```{r, message = FALSE}
-rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
 p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick, knitr)
@@ -438,7 +441,7 @@ return(foto_resized)
 }
 ```
 
-Por otro lado, creamos una función para el post-procesamiento de las imágenes tras la eliminición de ruido. Queremos devolverlas a su tamaño original con el objetivo de comparar con las imágenes iniciales.
+Por otro lado, también creamos una función para el post-procesamiento de las imágenes tras la eliminación de ruido. Queremos devolverlas a su tamaño original con el objetivo de comparar con las imágenes iniciales.
 
 ```{r}
 # Post-procesamiento de la imagen:
@@ -464,7 +467,7 @@ return(foto_resized)
 
 Comenzamos generando una función `procesar_imagen_wavelet` con parámetros foto, tipo y policy. Esta función realiza en primer lugar la transformada wavelet a cada uno de los tres canales de una imagen. A continuación, se realiza el thresholding con la función threshold, pudiendo variar de el tipo de "hard" a "soft" y el parámetro policy (modificando adecuadamente los parámetros necesarios en la función threshold en este último caso). Una vez realizada la eliminación de ruido, se aplica la trasnformada wavelet inversa `imwr` para por último reconstruir la imagen a partir de los tres canales.
 
-```{r}
+```{r, echo = TRUE}
 procesar_imagen_wavelet <- function(foto, tipo = "hard", policy = "universal") {
   # 1. Realizamos la transformada wavelet a cada canal
   lwd <- lapply(1:3, function(canal) {
@@ -1341,7 +1344,7 @@ La diferencia más notable en comparación con el resto de resultados, es que en
 
 La baja resolución de la imagen hace que sea más difícil mantener un equilibrio entre la eliminación del ruido y la preservación de los detalles. Al aumentar los niveles de descomposición, el ruido se elimina en mayor medida, pero también se pierde mucha información útil.
 ```{r, echo = FALSE}
-rm(filtro, nivel, umbral, wavelt_filter)
+rm(filtro, nivel, umbral, wavelet_filter)
 ```
 
 
@@ -1355,7 +1358,7 @@ p_load(gsignal, fields)
 Comenzamos probando con la imagen 1 y el ruido gaussiano. Se realiza la transformada de fourier y en el espacio de frecuencias se representan las frecuencias bajas en el centro y las altas en los extremos. El ruido, generalemente asociado a frecuencias altas, se intetará eliminar evitando reduciendo las frecuencias altas.
 
 
-```{r echo=F}
+```{r echo=F, eval = FALSE}
 imgr <- add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
 
 # CANAL ROJO
@@ -1389,7 +1392,7 @@ spectr_b <- 20*log10(Mod(fshift_b))
 #fields::image.plot(spectr_b)
 ```
 
-```{r echo=F}
+```{r echo=F, eval = FALSE}
 
 # CANAL ROJO
 
@@ -1428,7 +1431,7 @@ spectr_shifted_b <- 20*log10(Mod(fshift_b))
 
 ```
 
-```{r echo=F}
+```{r echo=F, eval = FALSE}
 fftmod_r <- gsignal::ifftshift(fshift_r, MARGIN = c(1,2))
 img_r <- Re(fft(fftmod_r, inverse = T)) / prod(dim(fftmod_r))
 fftmod_g <- gsignal::ifftshift(fshift_g, MARGIN = c(1,2))
@@ -1444,13 +1447,27 @@ img[,,3] <- img_b
 ```
 
 
-```{r echo=F}
-plot(Image((imgr), colormode = "Color"))
-plot(Image((img), colormode = "Color"))
+```{r echo=F, eval = FALSE}
+
+png("fftshift/image1_fourier.png", width = 700, height = 350)
+par(mfrow = c(1, 2), cex = 0.5)
+
+EBImage::display(Image(imgr, colormode = 'Color'), method='r')
+title('Imagen 1 con ruido gaussiano')
+EBImage::display(Image(img, colormode = 'Color'), method='r')
+title('Imagen 1 sin ruido')
+
+
+dev.off()
+# plot(Image((imgr), colormode = "Color"))
+# plot(Image((img), colormode = "Color"))
+```
+```{r}
+include_graphics("fftshift/image1_fourier.png")
 ```
 
 
-```{r echo=F}
+```{r echo=F,  eval = FALSE}
 rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g, 
    fft_b, n_b, fshift_b, spectr_b, small, spectr_shifted_r, spectr_shifted_g,
    spectr_shifted_b, fftmod_r, fftmod_g, fftmod_b, img_r, img_g, img_b, img)
@@ -1460,7 +1477,7 @@ rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g,
 La siguiente prueba se ha realizado con la imagen 2 y ruido sinusoidal alto. Este tipo de ruido es el que más problemas generó con los otros dos métodos.
 
 
-```{r echo=F}
+```{r echo=F,  eval = FALSE}
 imgr <- add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
 
 # CANAL ROJO
@@ -1494,7 +1511,7 @@ spectr_b <- 20*log10(Mod(fshift_b))
 # fields::image.plot(spectr_b)
 ```
 
-```{r echo=F}
+```{r echo=F,  eval = FALSE}
 
 # CANAL ROJO
 
@@ -1533,7 +1550,7 @@ spectr_shifted_b <- 20*log10(Mod(fshift_b))
 
 ```
 
-```{r echo=F}
+```{r echo=F, eval = FALSE}
 fftmod_r <- gsignal::ifftshift(fshift_r, MARGIN = c(1,2))
 img_r <- Re(fft(fftmod_r, inverse = T)) / prod(dim(fftmod_r))
 fftmod_g <- gsignal::ifftshift(fshift_g, MARGIN = c(1,2))
@@ -1549,13 +1566,25 @@ img[,,3] <- img_b
 ```
 
 
-```{r echo=F}
-plot(Image((imgr), colormode = "Color"))
-plot(Image((img), colormode = "Color"))
+```{r echo=F, eval = FALSE}
+png("fftshift/image2_fourier.png", width = 700, height = 350)
+par(mfrow = c(1, 2), cex = 0.5)
+
+EBImage::display(Image(imgr, colormode = 'Color'), method='r')
+title('Imagen 2 con ruido sinusoidal')
+EBImage::display(Image(img, colormode = 'Color'), method='r')
+title('Imagen 2 sin ruido')
+
+dev.off()
+# plot(Image((imgr), colormode = "Color"))
+# plot(Image((img), colormode = "Color"))
 ```
 
+```{r}
+include_graphics("fftshift/image2_fourier.png")
+```
 
-```{r echo=F}
+```{r echo=F, eval = FALSE}
 rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g, 
    fft_b, n_b, fshift_b, spectr_b, small, spectr_shifted_r, spectr_shifted_g,
    spectr_shifted_b, fftmod_r, fftmod_g, fftmod_b, img_r, img_g, img_b, img)
@@ -1563,10 +1592,10 @@ rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g,
 
 
 
-### Imagen 3 y ruido gamma
 
 
-```{r echo=F}
+
+```{r echo=F,  eval = FALSE}
 imgr <- add_noise_to_image("3", "gamma", list(looks = 2))
 
 # CANAL ROJO
@@ -1600,7 +1629,7 @@ spectr_b <- 20*log10(Mod(fshift_b))
 # fields::image.plot(spectr_b)
 ```
 
-```{r echo=F}
+```{r echo=F,  eval = FALSE}
 
 # CANAL ROJO
 
@@ -1639,7 +1668,7 @@ spectr_shifted_b <- 20*log10(Mod(fshift_b))
 
 ```
 
-```{r echo=F}
+```{r echo=F,  eval = FALSE}
 fftmod_r <- gsignal::ifftshift(fshift_r, MARGIN = c(1,2))
 img_r <- Re(fft(fftmod_r, inverse = T)) / prod(dim(fftmod_r))
 fftmod_g <- gsignal::ifftshift(fshift_g, MARGIN = c(1,2))
@@ -1655,13 +1684,19 @@ img[,,3] <- img_b
 ```
 
 
-```{r echo=F}
-plot(Image((imgr), colormode = "Color"))
-plot(Image((img), colormode = "Color"))
+```{r echo=F,  eval = FALSE}
+par(mfrow = c(2, 2), cex = 0.5)
+
+EBImage::display(Image(imgr, colormode = 'Color'), method='r')
+title('Imagen 3 con ruido gamma')
+EBImage::display(Image(img, colormode = 'Color'), method='r')
+title('Imagen 3 sin ruido')
+# plot(Image((imgr), colormode = "Color"))
+# plot(Image((img), colormode = "Color"))
 ```
 
 
-```{r echo=F}
+```{r echo=F,  eval = FALSE}
 rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g, 
    fft_b, n_b, fshift_b, spectr_b, small, spectr_shifted_r, spectr_shifted_g,
    spectr_shifted_b, fftmod_r, fftmod_g, fftmod_b, img_r, img_g, img_b, img)
