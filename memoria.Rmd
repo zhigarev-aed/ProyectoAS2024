@@ -4,15 +4,15 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     echo: true
     number_sections: true
     theme: lumen
     toc: true
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
@@ -83,7 +83,7 @@ Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
-p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick, knitr, gsignal, fields)
+p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick, knitr)
 ```
 
 Se ha escogido emplear tres métodologías distintas para realizar la eliminación de ruido. Dos de ellas se basan en emplear la transformada wavelet. Sin embargo, también se ha optado por emplear en un tercer método el análisis mediante transformadas de Fourier con el objetivo de encontrar similitudes y diferencias con respecto a los métodos que emplean wavelets.
@@ -1348,6 +1348,9 @@ rm(filtro, nivel, umbral, wavelt_filter)
 ## Transformada de Fourier
 
 Por último, vamos a ver que es lo que ocurre cuando en lugar de transformadas wavelet empleamos transformadas de fourier.
+```{r}
+p_load(gsignal, fields)
+```
 
 Comenzamos probando con la imagen 1 y el ruido gaussiano. Se realiza la transformada de fourier y en el espacio de frecuencias se representan las frecuencias bajas en el centro y las altas en los extremos. El ruido, generalemente asociado a frecuencias altas, se intetará eliminar evitando reduciendo las frecuencias altas.
 
