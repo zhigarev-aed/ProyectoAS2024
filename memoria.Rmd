@@ -80,13 +80,13 @@ En este trabajo, se emplearán wavelets como herramienta principal para eliminar
 
 # Funciones de programacion empleadas 
 
-Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 ```{r, eval = TRUE}
 rm(list = ls())
 ```
 
 
 ```{r, message = FALSE, eval = TRUE}
+# Antes de comenzar, instalamos y/o cargamos todos los paquetes requeridos.
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
 p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, stringr, jpeg, abind, magick, knitr)
@@ -107,7 +107,7 @@ transformada discreta wavelet de acuerdo con el algoritmo de Mallat.
 - `imwd(image, filter.number=10, family="DaubLeAsymm", type="wavelet",...).`
 
 El argumento `image` de la función debe ser una matriz cuadrada cuya dimensión
-sea potencia de dos.`filter.number` elige la suavidad de la wavelet a emplear, siendo por defecto 10. `family` indica la familia de wavelets a emplear ("DaubExPhase" ó "DaubLeAsymm").Para tratar las fronteras, mantendremos el parámetro `bc = "periodic"` por defecto.
+sea potencia de dos. `filter.number` elige la suavidad de la wavelet a emplear, siendo por defecto 10. `family` indica la familia de wavelets a emplear ("DaubExPhase" ó "DaubLeAsymm"). Para tratar las fronteras, mantendremos el parámetro `bc = "periodic"` por defecto.
 
 ```{r, eval = TRUE, fig.width=5, fig.height=3}
 # Representación de las dos familias de wavelets empleadas por la función imwd.
@@ -150,38 +150,29 @@ Durante el desarrollo del trabajo variaremos estos parámetros para observar su 
 
 **Método 2. Función denoise.dwt.2d**
 
-Empleamos la función denoise.dwt.2d del paquete waveslim para eliminar el ruido de las imágenes empleando la transformada wavelet discreta (DWT).
+Empleamos la función `denoise.dwt.2d()` del paquete waveslim, que emplea la transformada wavelet discreta en las dos direcciones de la imagen (DWT-2D).
 
-Esta función descompone la imagen en coeficientes wavelet, aplicando un filtro wavelet seleccionado (wf) en ambos ejes (DWT-2D). Como resultado, la imagen queda dividida en 4 cuadrantes:
+- `denoise.dwt.2d(x, wf = "la8", J = 4, method = "universal", H = 0.5, noise.dir = 3, rule = "hard")`
+
+`wf` es el filtro wavelet a emplear, pudiendo tomar diversos valores predeterminados que indican la forma de la wavelet y el número de coeficientes. `J` es el número de niveles de la descomposición, la profundidad de la misma. `method` es la técnica empleada para elegir umbral. `H` es el parámetro de Hurst, una medida de autocorrelación a largo plazo de los datos. `noise.dir`define el número de direcciones espaciales en las que se calcula la estimación del ruido. Finalmente `rule` indica la regla a emplear para la aplicación del umbral.
+
+Esta función descompone la imagen en coeficientes wavelet, aplicando un filtro wavelet seleccionado (`wf`). Como resultado, la imagen queda dividida en 4 subimágenes o subbandas:
 
 * Aproximación (LL): Componentes de baja frecuencia tanto en las filas como en las columnas. Es la versión suavizada o "borrosa" de la imagen, que captura las características generales.
 
 * Horizontal (LH): Componentes de baja frecuencia en las filas y alta frecuencia en las columnas. Contiene detalles horizontales de la imagen.
 
-* Vertical (HL): Componentes de alta frecuencia en las filas y baja frecuencia en las columnas. Representa los detalles verticales (bordes o cambios horizontales en la imagen).
+* Vertical (HL): Componentes de alta frecuencia en las filas y baja frecuencia en las columnas. Representa los detalles verticales.
 
 * Diagonal (HH): Contiene las componentes de alta frecuencia tanto en las filas como en las columnas.
 
-Esta descomposición en 4 cuadrantes se repite tantas veces como niveles (J) se especifiquen en la función.
+Esta descomposición en 4 cuadrantes se repite tantas veces como niveles (`J`) se especifiquen en la función.
 
-El siguiente paso es aplicar un umbral para ajustar o eliminar los coeficientes de más alta frecuencia en los de cuadrantes de detalle HL, LH y HH en cada nivel de descomposición. Cabe destacar que no se aplica el umbral al cuadrante LL, ya que contiene las componentes de baja frecuencia, que generalmente no están afectadas por el ruido.
+El siguiente paso es calcular y aplicar el umbral para ajustar o eliminar los coeficientes de más alta frecuencia en las subbandas de detalle HL, LH y HH en cada nivel de descomposición. Cabe destacar que no se aplica el umbral a la subimagen LL, ya que contiene las componentes de baja frecuencia, que -generalmente- no están afectadas por el ruido.
 
 Después de aplicar el umbral para suprimir el ruido, la imagen se reconstruye empleando la transformada wavelet inversa (IDWT). Como se observa, esta función es una aplicación más directa del método anterior, ya implementada en una única función. 
 
-* Probaremos con dos reglas diferentes de umbral (rule):
-
-  + hard: Anula los coeficientes por debajo del umbral, asígnándoles valor 0. Es una opción más agresiva.
-  + soft: En lugar de anular directamente los coeficientes, les otorga un valor gradual en función de su cercanía al umbral. Permite una reducción del ruido menos abrupta.
-  
-* Niveles de descomposición (J):
-
-Probaremos tres niveles de descomposición distintos. El ruido suele encontrarse en las altas frecuencias de los niveles más bajos, mientras que en los niveles altos se encuentran los detalles más finos. Esperamos que un mayor nivel de descomposición genere imágenes más suavizadas, pero con menos detalles.
-
-* Filtros wavelet: 
-
-Finalmente, realizaremos la descomposición de la imagen con 4 filtros wavelet distintos, son 4 wavelets con diferentes formas (pueden ser simétricas o no), y diferente numero de coeficientes.
-
-  + d4 (Daubechies 4),la8 (Least Asymmetric 8), bl14 (Best Localized 14), mb8 (Maximum Flat 8)
+Al igual que con el método anterior, emplearemos esta función variando diferentes parámetros e interpretando los resultados. 
   
 **Método 3. Transformada de Fourier (función fftshift)**
 
@@ -232,13 +223,12 @@ par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
  }
 dev.off()
 ```
-```{r, eval = TRUE}
+```{r, eval = TRUE, out.width="60%"}
 include_graphics("imwd/all_images.png")
 ```
 
 
 ## Inclusión de ruido sintético en las imágenes  
-
 Se crean la función `add_noise_to_image` y `NOISE_TYPES` para añadir el ruido a las imágenes. Los ruidos que se han generado, con parámetros ajustables a variar, son los siguientes:
 
 - Ruido gaussiano de media 0 y desviación típica ajustable.
@@ -533,7 +523,7 @@ title('Imagen 5 sin ruido')
 
 dev.off()
 ```
-```{r, eval = TRUE}
+```{r, eval = TRUE, out.height="25%"}
 include_graphics("imwd/image4_5_gaussian.png")
 ```
 
@@ -560,7 +550,7 @@ title('Imagen 5 sin ruido')
 dev.off()
 ```
 
-```{r, eval = TRUE}
+```{r, eval = TRUE, out.height="25%"}
 include_graphics("imwd/image4_5_original_size.png")
 ```
 
@@ -614,7 +604,7 @@ title('Imagen 1 sin ruido')
 dev.off()
 ```
 
-```{r, eval = TRUE}
+```{r, eval = TRUE, out.height="25%"}
 include_graphics("imwd/image1_sinusoidal.png")
 ```
 
@@ -672,7 +662,7 @@ title('Imagen 1 sin ruido')
 dev.off()
 ```
 
-```{r, eval = TRUE}
+```{r, eval = TRUE, out.height="25%"}
 include_graphics("imwd/image1_sinusoidal_manual.png")
 ```
 
@@ -750,7 +740,7 @@ title('Imagen 3 sin ruido')
 dev.off()
 ```
 
-```{r, eval = TRUE}
+```{r, eval = TRUE, out.height="25%"}
 include_graphics("imwd/image1_otros_ruidos_original.png")
 ```
 
@@ -760,7 +750,7 @@ rm(images_recortadas, images_sin_ruido, images_sin_ruidos)
 
 ### Ampliando las imágenes
 
-Vamos ha emplear ahora el otro método: aumentando la matriz con 0 ó 1 hasta el tamaño adecuado para poder aplicar la función `imwd`. Comenzamos generando las imágenes con ruido. Se elige la foto con menor resolución (imagen 5) porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas debido a que la matriz se hace demasiado grande. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
+Vamos a emplear ahora el otro método: aumentando la matriz con 0 ó 1 hasta el tamaño adecuado para poder aplicar la función `imwd`. Comenzamos generando las imágenes con ruido. Se elige la foto con menor resolución (imagen 5) porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas debido a que la matriz se hace demasiado grande. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
 
 ```{r,echo=FALSE, eval = TRUE}
 gaussian_noise_5<-add_noise_to_image("5", "gaussian", list(std_dev = 0.5))
@@ -908,39 +898,39 @@ Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar e
 
 Eliminar Ruido Gaussiano: Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
  
-```{r,echo=FALSE, eval = TRUE}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(1))
 ```
 
                          
 Eliminar Ruido Sinusoidal de alta frecuencia: Al igual que en el ruido gaussiano, se observa que al eliminar el ruido sinusoidal alto el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
  
-```{r,echo=FALSE, eval = TRUE}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(2))
 ```
 
 Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observar diferencias
-```{r,echo=FALSE, eval = TRUE}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(3))
 ```
 
 En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina, obteniendo una imagen mejorada con FDR.
 
 Eliminar Ruido Salt and pepper: 
-```{r,echo=FALSE, eval = TRUE}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(4))
 ```
 
 
 Eliminar  Ruido uniforme:
-```{r,echo=FALSE, eval = TRUE}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(6))
 ```
 
 En el caso de ruido gamma, no se logra una eliminación adecuada con FDR, y el método universal parece ofrecer mejores resultados.
 
 Eliminar Ruido gamma:
-```{r,echo=FALSE, eval = TRUE}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(5))
 ```
 
@@ -1031,14 +1021,36 @@ imprimir_ajustes <- function(i) {
 
 ## Función denoise.dwt.2d
 
-En segundo lugar, vamos a emplear la función `denoise.dwt.2d`, un método más directo que realiza la transformada wavelet, el thresholding y la transformada inversa en esta función ya implementada en R. A continuación se muestran los distintos filtros wavelet que se pueden escoger como parámetros de esta función.
+En segundo lugar, vamos a emplear la función `denoise.dwt.2d`, un método más directo que realiza la transformada wavelet, el thresholding y la transformada inversa mediante esta función ya implementada en R.
 
+Modificaremos distintos argumentos de esta función para comparar los resultados:
 
-```{r}
+* Reglas de umbral (`rule`):
+
+  + hard: Anula los coeficientes por debajo del umbral, asígnándoles valor 0. Es una opción más agresiva.
+  + soft: En lugar de anular directamente los coeficientes, les otorga un valor gradual en función de su cercanía al umbral. Permite una reducción del ruido menos abrupta.
+  
+* Niveles de descomposición (`J`):
+
+Probaremos con 2, 3 y 4 niveles de descomposición. El ruido suele encontrarse en las altas frecuencias de los niveles más bajos, mientras que en los niveles altos se encuentran los detalles más finos. Esperamos que un mayor nivel de descomposición genere imágenes más suavizadas, pero con menos detalles.
+
+```{r, eval=TRUE}
+# establecemos los parámetros
+nivel <- c(2, 3, 4)
+umbral <- c("soft", "hard")
+```
+
+* Filtros wavelet (`wf`): 
+
+Finalmente, realizaremos la descomposición de la imagen con 4 filtros wavelet distintos, 4 wavelets con diferentes formas (pueden ser simétricas o no), y diferente numero de coeficientes (suavidad).
+
+d4 (Daubechies 4),la8 (Least Asymmetric 8), bl14 (Best Localized 14), mb8 (Maximum Flat 8)
+
+```{r, out.width="60%", out.height="20%"}
 
 # dir.create("denoisedwt2d", showWarnings = FALSE)
 
-# png("denoisedwt2d/wavelet_filters.png", width = 800, height = 400)
+png("denoisedwt2d/wavelet_filters.png", width = 800, height = 400)
 
 filtro <- c('d4', 'la8', 'bl14', 'mb8')
 
@@ -1064,344 +1076,440 @@ for (f in filtro) {
        ylim = y_lim)
 }
 
-# dev.off()
+dev.off()
+```
 
+```{r}
 rm(h_adjusted)
 rm(g_adjusted)
 rm(max_val)
 rm(y_lim)
 ```
 
-Dado que se han realizado múltiples pruebas y los resultados son muy similares, se muestran solo aquellos que se han considerado más relevantes.
-
-```{r}
-nivel <- c(2, 3, 4)
-umbral <- c("soft", "hard")
-
+```{r, eval = TRUE, out.width="50%"}
+knitr::include_graphics("denoisedwt2d/wavelet_filters.png")
 ```
 
-Primero, mostramos el resultado del proceso de denoising de la imagen 1, a la que se le añadió ruido gaussiano. Este caso se utiliza como ejemplo porque ilustra las conclusiones que también son válidas para el resto de imágenes y tipos de ruido.
+Dado que se han realizado múltiples pruebas y los resultados son muy similares, se muestran solo aquellos que se han considerado más relevantes.
 
-```{r,out.width="40%", out.height="40%", eval = TRUE}
+Primero, mostramos el resultado del proceso de eliminación del ruido de la imagen 1, a la que se le añadió ruido gaussiano. Este caso se utiliza como ejemplo porque ilustra las conclusiones que generalmente son válidas para el resto de imágenes y tipos de ruido.
+
+```{r}
 # Para evitar largos tiempos de procesado, se generaron las imágenes y se almacenaron en la carpeta denoisedwt2d, y serán las imagenes guardadas las que se muestren en el markdown.
 
-# png("denoisedwt2d/gaussian.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[1]]
-# i_ruidosa <-  add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
-#     
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/gaussian_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-#         
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#     }}}
-# 
-# dev.off()
+png("denoisedwt2d/gaussian.png", width = 800, height = 400)
 
+i_sinruido <- images[[1]]
+i_ruidosa <-  add_noise_to_image("1", "gaussian", list(std_dev = 0.3))
+
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+png("denoisedwt2d/gaussian_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+    }}}
+
+dev.off()
+```
+
+```{r, eval = TRUE, out.width="40%"}
 knitr::include_graphics("denoisedwt2d/gaussian.png")
 ```
 
-
-```{r, eval= TRUE}
+```{r, eval= TRUE, out.height="70%"}
 include_graphics("denoisedwt2d/gaussian_denoised.png")
 
 ```
+
 Se observa que el uso de los diferentes filtros wavelet y reglas de aplicación del umbral no genera resultados con diferencias significativas. Sin embargo, el nivel de descomposición sí tiene un impacto notable.
 
 Con un menor número de niveles (2-3), se logran conservar los detalles de la imagen, pero el ruido no se elimina completamente, con solo 2 niveles, el ruido sigue siendo evidente. Al aumentar a 4 niveles, se obtiene una imagen en la que el ruido es prácticamente inapreciable, aunque aparece algo más suavizada. Si se aumentaran aún más los niveles de descomposición, se empezarían a perder detalles importantes de la imagen. Con 4 niveles se consigue un buen equilibrio entre la eliminación del ruido y la conservación de los detalles. Este comportamiento se repite en los distintos tipos de ruido analizados.
 
-A continuación mostramos solo algunas particularidades relevantes de los resultados: 
+A continuación se muestran algunas particularidades relevantes de los resultados obtenidos: 
 
 Por ejemplo, en el caso del ruido sinusoidal de alta frecuencia, el resultado del proceso de eliminación de ruido es distinto.
 
-```{r, eval = TRUE, out.width="50%", out.height="50%"}
-# png("denoisedwt2d/sinhigh.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[2]]
-# i_ruidosa <- add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
-#     
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/sinhigh_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-#         
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#   }}}
-# 
-# dev.off()
+```{r}
+png("denoisedwt2d/sinhigh.png", width = 800, height = 400)
 
+i_sinruido <- images[[2]]
+i_ruidosa <- add_noise_to_image("2", "sinusoidal_high", list(frequency = 25, amplitude = 0.2))
+
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+png("denoisedwt2d/sinhigh_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+  }}}
+
+dev.off()
+```
+
+```{r, eval = TRUE, out.width="40%"}
 knitr::include_graphics("denoisedwt2d/sinhigh.png")
 ```
 
-
-```{r, eval = TRUE}
+```{r}
 include_graphics("denoisedwt2d/sinhigh_denoised.png")
+```
+
+
+```{r}
+
+png("denoisedwt2d/sinhigh_denoised_show.png", width = 1200, height = 600)
+
+par(mfcol= c(2,4))
+for (f in filtro){
+  for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = 4)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = 4)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = 4)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", 4))
+  }}
+
+dev.off()
 
 ```
+
+```{r, eval = TRUE, out.width="70%"}
+
+knitr::include_graphics("denoisedwt2d/sinhigh_denoised_show.png")
+
+```
+
 En este caso, vemos que en ninguno de los casos logramos eliminar completamente el ruido sinusoidal. Esto puede deberse a que este tipo de ruido presenta componentes muy específicas de alta frecuencia, que pueden coincidir con las frecuencias de los detalles importantes de la imagen, lo que dificulta eliminar el ruido sin comprometer los detalles de la imagen. El ruido sinusoidal era también el más complicado de eliminar cuándo aplicabamos la función `imwd` y `threshold`.
 
 
-```{r, echo = FALSE}
-# png("denoisedwt2d/sinlow.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[3]]
-# i_ruidosa <- add_noise_to_image("3", "sinusoidal_low", list(frequency = 5, amplitude = 0.2))
-# 
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/sinlow_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-# 
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#   }}}
-# 
-# dev.off()
+```{r}
+png("denoisedwt2d/sinlow.png", width = 800, height = 400)
 
-# include_graphics("denoisedwt2d/sinlow.png")
-# include_graphics("denoisedwt2d/sinlow_denoised.png")
+i_sinruido <- images[[3]]
+i_ruidosa <- add_noise_to_image("3", "sinusoidal_low", list(frequency = 5, amplitude = 0.2))
 
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+png("denoisedwt2d/sinlow_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+  }}}
+
+dev.off()
+
+```
+
+```{r, out.width="40%"}
+knitr::include_graphics("denoisedwt2d/sinlow.png")
+```
+
+```{r, out.height="70%"}
+include_graphics("denoisedwt2d/sinlow_denoised.png")
 ```
 
 Otro ruido que tiene resultados peculiares es el ruido de tipo salt-and-pepper.
 
-```{r, eval = TRUE,out.width="50%", out.height="50%"}
-# png("denoisedwt2d/pepper.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[4]]
-# i_ruidosa <- add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
-#     
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/pepper_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-#         
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#   }}}
-# 
-# dev.off()
+```{r}
+png("denoisedwt2d/pepper.png", width = 800, height = 400)
 
+i_sinruido <- images[[4]]
+i_ruidosa <- add_noise_to_image("4", "salt_pepper", list(epsilon = 0.1))
+
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+
+png("denoisedwt2d/pepper_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+  }}}
+
+dev.off()
+```
+
+```{r, eval = TRUE, out.width="40%"}
 knitr::include_graphics("denoisedwt2d/pepper.png")
 ```
 
 
-```{r, eval = TRUE}
+```{r, out.height="70%"}
 include_graphics("denoisedwt2d/pepper_denoised.png")
 
 ```
-En este caso, de nuevo las diferencias más notables de deben a los distintos niveles de descomposición, sin embargo, también observamos diferencias sutiles en los resultados en cuanto a:
 
-* La regla de aplicación del umbral: Al utilizar la regla soft, se consigue una mejor eliminación del ruido. Esto podría deberse a que el ruido salt and pepper asigna valores cercanos a 0 (pimienta, negro) y cercanos a 1 (sal, blanco) a algunos píxeles. Al aplicar el método hard, no se atenúan adecuadamente los picos de ruido debido a su naturaleza más agresiva.
+```{r}
 
-* El filtro wavelet empleado: El rendimiento con el filtro d4 es inferior al de otros filtros. Esto se debe a que el filtro d4 es un filtro corto (con solo 4 coeficientes) y tiene una resolución de frecuencia limitada. Como resultado, no puede capturar eficazmente los picos abruptos del ruido, como los valores 0 y 1 del ruido salt and pepper.
+png("denoisedwt2d/pepper_denoised_show.png", width = 1200, height = 600)
 
-```{r, echo = FALSE}
-# png("denoisedwt2d/gamma.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[1]]
-# i_ruidosa <- add_noise_to_image("1", "gamma", list(looks = 2))
-# 
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/gamma_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-# 
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#   }}}
-# 
-# dev.off()
-# 
-# include_graphics("denoisedwt2d/gamma.png")
-# include_graphics("denoisedwt2d/gamma_denoised.png")
+par(mfcol= c(2,4))
+for (f in filtro){
+  for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = 4)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = 4)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = 4)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", 4))
+  }}
+
+dev.off()
 
 ```
 
-```{r, echo = FALSE}
-# png("denoisedwt2d/multiplicative.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[2]]
-# i_ruidosa <- add_noise_to_image("2", "uniform_multiplicative", list(looks = 2))
-# 
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/multiplicative_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-# 
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#   }}}
-# 
-# dev.off()
-# 
-# include_graphics("denoisedwt2d/multiplicative.png")
-# include_graphics("denoisedwt2d/multiplicative_denoised.png")
+```{r, eval = TRUE, out.width="60%"}
+
+knitr::include_graphics("denoisedwt2d/pepper_denoised_show.png")
+
+```
+
+En este caso, observamos diferencias sutiles en los resultados en cuanto a:
+
+* La regla de aplicación del umbral: Al utilizar la regla soft, se consigue una mejor eliminación del ruido. Esto podría deberse a que el ruido salt and pepper asigna valores extremos (cercanos a 0 y 1) a algunos píxeles. Al aplicar el método hard, no se atenúan adecuadamente los picos de ruido debido a su naturaleza más agresiva.
+
+* El filtro wavelet empleado: El rendimiento con el filtro d4 es inferior al de otros filtros. Esto se debe a que el filtro d4 es un filtro corto (solo 4 coeficientes) y tiene una resolución de frecuencia limitada. Como resultado, no puede capturar eficazmente los picos abruptos de este tipo de ruido
+
+```{r, out.width="50%", out.height="70%"}
+
+png("denoisedwt2d/gamma.png", width = 800, height = 400)
+
+i_sinruido <- images[[1]]
+i_ruidosa <- add_noise_to_image("1", "gamma", list(looks = 2))
+
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+png("denoisedwt2d/gamma_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+  }}}
+
+dev.off()
+
+include_graphics("denoisedwt2d/gamma.png")
+include_graphics("denoisedwt2d/gamma_denoised.png")
+
+```
+
+```{r, out.width="50%", out.height="70%"}
+
+png("denoisedwt2d/multiplicative.png", width = 800, height = 400)
+
+i_sinruido <- images[[2]]
+i_ruidosa <- add_noise_to_image("2", "uniform_multiplicative", list(looks = 2))
+
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+png("denoisedwt2d/multiplicative_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+  }}}
+
+dev.off()
+
+include_graphics("denoisedwt2d/multiplicative.png")
+include_graphics("denoisedwt2d/multiplicative_denoised.png")
 
 ```
 
 Por último, presentamos los resultados del proceso de denoising de la imagen 5, a la que se le ha aplicado ruido gaussiano. A diferencia de la imagen 1, en este caso la resolución de la imagen es considerablemente inferior, lo que parece influir en los resultados obtenidos.
 
-```{r, eval = TRUE, out.width="40%", out.height="40%"}
-# png("denoisedwt2d/image5_noise.png", width = 800, height = 400)
-# 
-# i_sinruido <- images[[5]]
-# i_ruidosa <- add_noise_to_image("5", "gaussian", list(std_dev = 0.3))
-#     
-# i_dim <- dim(i_sinruido)
-# i_len <- length(i_sinruido)
-# 
-# i_denoised <- array(0, dim = dim(i_ruidosa))
-# 
-# par(mfrow= c(1,2))
-# display(Image(i_sinruido, colormode = "Color"), method = "r")
-# title("Original")
-# display(Image(i_ruidosa, colormode = "Color"), method = "r")
-# title("Imagen con ruido")
-# 
-# dev.off()
-# png("denoisedwt2d/image5_denoised.png", width = 1200, height = 1800)
-# 
-# par(mfcol= c(6,4))
-# for (f in filtro){
-#   for (n in nivel){
-#     for (u in umbral){
-#       canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
-#       canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
-#       canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
-#       i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
-#         
-#       display(Image(i_denoised, colormode = "Color"), method = "r")
-#       title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
-#   }}}
-# 
-# dev.off()
+```{r,  out.width="50%", out.height="70%"}
+png("denoisedwt2d/image5_noise.png", width = 800, height = 400)
 
+i_sinruido <- images[[5]]
+i_ruidosa <- add_noise_to_image("5", "gaussian", list(std_dev = 0.3))
+
+i_dim <- dim(i_sinruido)
+i_len <- length(i_sinruido)
+
+i_denoised <- array(0, dim = dim(i_ruidosa))
+
+par(mfrow= c(1,2))
+display(Image(i_sinruido, colormode = "Color"), method = "r")
+title("Original")
+display(Image(i_ruidosa, colormode = "Color"), method = "r")
+title("Imagen con ruido")
+
+dev.off()
+png("denoisedwt2d/image5_denoised.png", width = 1200, height = 1800)
+
+par(mfcol= c(6,4))
+for (f in filtro){
+  for (n in nivel){
+    for (u in umbral){
+      canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = f, rule = u, J = n)
+      canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = f, rule = u, J = n)
+      canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = f, rule = u, J = n)
+      i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+      display(Image(i_denoised, colormode = "Color"), method = "r")
+      title(paste0("Wavelet ", f, ", umbral " , u, ", nivel ", n))
+  }}}
+
+dev.off()
+```
+
+
+```{r, eval = TRUE, out.width="50%"}
 knitr::include_graphics("denoisedwt2d/image5_noise.png")
 ```
 
 
-```{r, eval = TRUE}
+```{r, out.height="70%"}
 include_graphics("denoisedwt2d/image5_denoised.png")
 
 ```
 
+```{r}
+
+png("denoisedwt2d/image5_denoised_show.png", width = 800, height = 600)
+
+par(mfcol= c(2,3))
+for (n in nivel){
+  for (u in umbral){
+    canal1 <- denoise.dwt.2d(i_ruidosa[,,1], wf = "d4", rule = u, J = n)
+    canal2 <- denoise.dwt.2d(i_ruidosa[,,2], wf = "d4", rule = u, J = n)
+    canal3 <- denoise.dwt.2d(i_ruidosa[,,3], wf = "d4", rule = u, J = n)
+    i_denoised <- array(c(canal1, canal2, canal3), dim = c(nrow(canal1), ncol(canal1), 3))
+
+    display(Image(i_denoised, colormode = "Color"), method = "r")
+    title(paste0("Wavelet ", "d4", ", umbral " , u, ", nivel ", n))
+  }}
+
+dev.off()
+
+```
+
+```{r, eval = TRUE, out.width="50%"}
+
+knitr::include_graphics("denoisedwt2d/image5_denoised_show.png")
+
+```
 La diferencia más notable en comparación con el resto de resultados, es que en este caso, al aumentar el numero de niveles de descomposición a un número que nos permita eliminar la mayor parte del ruido, la calidad de la imagen se ve significativamente afectada, y obtenemos una imagen excesivamente suavizada. Esto puede deberse a que a medida que aumentan los niveles de descomposición, la imagen se descompone en frecuencias cada vez más altas, provocando la pérdida de detalles finos.
 
 La baja resolución de la imagen hace que sea más difícil mantener un equilibrio entre la eliminación del ruido y la preservación de los detalles. Al aumentar los niveles de descomposición, el ruido se elimina en mayor medida, pero también se pierde mucha información útil.
-```{r, echo = FALSE}
+
+```{r, eval = TRUE, warning=FALSE}
 rm(filtro, nivel, umbral, wavelet_filter)
 ```
 
