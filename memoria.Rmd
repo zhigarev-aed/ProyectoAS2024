@@ -61,22 +61,19 @@ knitr::opts_chunk$set(echo=FALSE,fig.align='center',out.width = '100%', eval = F
 
 # Introducción  
 
-En el campo del análisis de señales, uno de los problemas es la eliminación de ruido en imágenes digitales. Las señales, que representan variaciones de magnitudes en el espacio y/o tiempo, a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
+En el campo del análisis de señales, un problema importante es la eliminación de ruido en imágenes digitales. Las señale a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
 
-El uso de wavelets es una herramienta clave para abordar este problema, el cual permite descomponer señales en sus componentes espaciales y frecuenciales de forma eficiente. Este método ofrece la posibilidad de adaptarse a las características particulares de cada tipo de ruido.
+El uso de wavelets es una herramienta clave para abordar este problema. Este método ofrece la posibilidad de adaptarse a las características particulares de cada tipo de ruido para su eliminación.
 
-En este trabajo se propone explorar la capacidad de los wavelets para la eliminación de ruido en imágenes digitales. Para ello, se generarán y analizarán diferentes tipos de ruido artificial, evaluando su complejidad para su atenuación y determinando los parámetros más eficaces de los wavelets.  
+En este trabajo se exploraran la capacidad de los wavelets para la eliminación de ruido en imágenes. Para ello, se generarán diferentes tipos de ruido sintético y determinando los parámetros más eficaces de los wavelets para su eliminación a través de 3 métodos distintos.  
 
 # Fundamento teórico: eliminación de ruido con wavelets
 
-Los wavelets son funciones matemáticas que permiten descomponer una señal en componentes de diferentes escalas, lo que resulta útil para identificar y procesar características específicas. Este enfoque es especialmente relevante en la eliminación de ruido, donde las frecuencias indeseadas pueden ser separadas y reducidas sin afectar significativamente las características principales de la señal original. A diferencia de la Transformada de Fourier, que opera globalmente y no ofrece información sobre la localización temporal de los eventos, los wavelets permiten un análisis localizado, facilitando la identificación de patrones y anomalías en los datos.
+Los wavelets son funciones matemáticas que suelen emplearpara descomponer una señal en componentes de diferentes escalas, lo que resulta útil para identificar y procesar características específicas. Este enfoque es especialmente relevante en la eliminación de ruido, donde las frecuencias indeseadas pueden ser separadas y reducidas sin afectar significativamente las características principales de la señal original. A diferencia de la transformada de Fourier, que opera globalmente y no ofrece información sobre el espacio, los wavelets permiten un análisis localizado, facilitando la identificación de patrones y anomalías en los datos.
 
 El proceso de reducción de ruido con wavelets generalmente incluye tres etapas principales: la descomposición de la señal utilizando una wavelet madre, la modificación de los coeficientes wavelet mediante técnicas de umbral, y la reconstrucción de la señal. La selección de la wavelet madre adecuada y los parámetros de umbral son aspectos críticos que deben adaptarse a las características específicas del ruido y la señal.
 
-Además, los wavelets ofrecen un enfoque multi-resolución, permitiendo una representación detallada de los componentes de alta frecuencia, asociados frecuentemente con el ruido, mientras preservan las estructuras globales de baja frecuencia. Esta característica hace que los wavelets sean especialmente útiles en aplicaciones donde la precisión y la integridad de los datos son esenciales, como en imágenes médicas, procesamiento de audio o análisis de datos científicos.
-
-En este trabajo, se emplearán wavelets como herramienta principal para eliminar diferentes tipos de ruido sintético en imágenes.
-
+Los wavelets resultan especialmente útiles en aplicaciones donde la reconstruccion fiel de la imagen si ruido es esencial, como en imágenes médicas, procesamiento de audio o análisis de datos científicos.
 
 # Funciones de programacion empleadas 
 
@@ -94,10 +91,10 @@ p_load(imager, wavethresh, ggplot2, dplyr, SpatialPack, waveslim, EBImage, strin
 
 Se ha escogido emplear tres métodologías distintas para realizar la eliminación de ruido. Dos de ellas se basan en emplear la transformada wavelet. Sin embargo, también se ha optado por emplear en un tercer método el análisis mediante transformadas de Fourier con el objetivo de encontrar similitudes y diferencias con respecto a los métodos que emplean wavelets.
 
-Con respecto a los métodos con wavelts utilizaremos un método muy directo, empleando la función `denoise.dwt.2d` del paquete `waveslim` de R. Por otro lado,
+Con respecto a los métodos con wavelets utilizaremos un método muy directo, empleando la función `denoise.dwt.2d` del paquete `waveslim` de R. Por otro lado,
 emplearemos un método más manual que consiste en realizar la transformada wavelet discreta con la función `imwd`, aplicar una función para realizar el thresholding y a continuación realizar la transformada inversa. 
 
-Para finalizar, se realizará la eliminación de ruido a través de transformadas de Fourier con la función `fftshift` y compararemos los resultados obtenidos con cada método.
+Para finalizar, se realizará la eliminación de ruido a través de transformadas de Fourier con la función `fft` y compararemos los resultados obtenidos con cada método.
 
 **Método 1. Eliminación de ruido con el algoritmo de Mallat**
 
@@ -144,7 +141,7 @@ devuelve la función `imwd()`.
 
 - `threshold(imwd, levels = 3:(nlevelsWT(imwd) - 1), type = "hard", policy = "universal", by.level = FALSE, value = 0, return.threshold = FALSE, compression = TRUE, Q = 0.05, ...)`
 
-`levels` es el número de niveles a los cuáles deseamos aplicar un umbral, mientras que `type` indica si queremos un umbral más suave ("soft") ó más fuerte ("hard"). El parámetro `policy` selecciona la técnica para elegir umbral. `by.level = FALSE` significa que se aplica un umbral global a todos los niveles indicados, mientras que `by.level = TRUE` calcular threshold para cada nivel por seaparado. El parámetro `value`, el valor del umbral, se usará si elegimos técnicas manuales en `policy`. Si queremos obtener el valor umbral aplicado, pondremos `return.threshold = TRUE`. Finalmente, dejaremos el parámetro `compression = TRUE` por defecto, para obterner un objeto más pequeño. 
+`levels` es el número de niveles a los cuáles deseamos aplicar un umbral, mientras que `type` indica si queremos un umbral más suave ("soft") ó más fuerte ("hard"). El parámetro `policy` selecciona la técnica para elegir umbral. `by.level = FALSE` significa que se aplica un umbral global a todos los niveles indicados, mientras que `by.level = TRUE` calcular threshold para cada nivel por seaparado. El parámetro `value`, el valor del umbral, se usará si elegimos técnicas manuales en `policy`. Si queremos obtener el valor umbral aplicado, pondremos `return.threshold = TRUE`. Finalmente, dejaremos el parámetro `compression = TRUE` por defecto, para obtener un objeto más pequeño. 
 
 Durante el desarrollo del trabajo variaremos estos parámetros para observar su efecto en la eliminación de diversos tipos de ruido y encontar aquellos que generen un mejor resultado en cada caso. Una vez realizado el thresholding, emplearemos la función `imwr` para realizar la transformda wavelet inversa y poder visualizar la imagen tras la eliminación de ruido.
 
@@ -177,9 +174,9 @@ Al igual que con el método anterior, emplearemos esta función variando diferen
 **Método 3. Transformada de Fourier (función fftshift)**
 
 
-El método usado usa la transformada rápida de fourier para poder eliminar altas frecuencias correspondientes a ruido en la imagen. La función *fftshift* desplaza las bajas frecuencias al centro del espectro y las altas a los extremos. Una vez se visualiza el espectro, se procede a disminuir la magnitud de las altas frecuencias cercanas a los extremos asignandoles una magnitud menor. Con este procedimiento estamos aplicando un filtro de paso bajo y aplicando *ifftshift* obtenemos la imagen en el dominio espacial con ruido eliminado.
+El método usado usa la transformada rápida de fourier para poder eliminar altas frecuencias correspondientes a ruido en la imagen. La función `fftshift` desplaza las bajas frecuencias al centro del espectro y las altas a los extremos para realizar aplicar `fft`. Una vez se visualiza el espectro, se procede a disminuir la magnitud de las altas frecuencias cercanas a los extremos asignandoles una magnitud menor.A continuación, se reconstruye la imagen deshaciendo el desplazamiento y realizando la transformada inversa.
 
-Además, a lo largo de las funciones ya implementadas en R a lo largo del trabajo se programaran diversas funciones que ayudarán a automatizar el proceso.
+Además de las funciones ya implementadas en R a lo largo del trabajo se programaran diversas funciones que ayudarán a automatizar el proceso.
 
 # Desarrollo y resultados
 
@@ -211,7 +208,7 @@ rm(images_rotadas)
 rm(fotos_a_girar)
 ```
 
-Vamos a visualizar las imágenes empleadas. Se han tomado 5 imágenes distintas pero todas con la misma temática. La elección se ha realizado pensando en poder observar como afecta la elimación de ruido detalles como la textura o defectos en las frutas. Además, las imágenes 1 a 4 se han tomado con una cámara de gran calidad, mientras que la imagen 5 cuenta con una resolución mucho menor. Se busca también estudiar que efecto tiene la resolución de la imagen y su calidada en la eliminación de ruido.
+Vamos a visualizar las imágenes empleadas. Se han tomado 5 imágenes distintas pero todas con la misma temática. La elección se ha realizado pensando en poder observar como afecta la elimación de ruido en detalles como la textura o defectos en las frutas. Además, las imágenes 1 a 4 se han tomado con una cámara de gran calidad, mientras que la imagen 5 cuenta con una resolución mucho menor. Se busca también estudiar que efecto tiene la resolución de la imagen en la eliminación de ruido.
 ```{r}
 # Visualizamos las imagenes originales 
 png("fotos/all_images.png", width = 700, height = 350)
@@ -223,7 +220,7 @@ par(mfrow = c(2, 3), mar = c(1, 1, 1, 1))
  }
 dev.off()
 ```
-```{r, eval = TRUE, out.width="60%"}
+```{r, eval = TRUE, out.width="75%"}
 include_graphics("imwd/all_images.png")
 ```
 
@@ -384,9 +381,7 @@ add_noise_to_image <- function(image_name, noise_type, noise_params = list(), pl
 
 ## Función imwd
 
-El uso de la Transformada Discreta de Wavelet (DWT) permite separar las frecuencias bajas de las frecuencias altas (que son las que suelen contener el ruido).
-
-Uno de los parametros de la funcion explicada anteriormente (threshold) es policy, el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual.
+Uno de los parametros de la funcion `threshold` explicada anteriormente es policy, el cual determina el valor del umbral utilizado en el proceso de eliminación de ruido. Se exploran tres enfoques diferentes para la selección del umbral: universal, fdr y manual.
 
 **Umbral Universal**
 
@@ -582,7 +577,7 @@ rm(image_1_sinosuidal_low)
 images_recortadas <- lapply(images_for_imwd_cut_2, resize_imwd)
 images_sin_ruido_sinusoidal<- lapply(images_recortadas, procesar_imagen_wavelet)
 ```
-Esta claro que los parámetros por defecto de la función threshold no son capaces de eliminar el ruido de tipo sinusoidal de la manera en que si lo era con el ruido de tipo Gaussiano, un tipo de ruido aleatorio, al contrario que el sinusoidal, que es una señal periódica.
+Esta claro que los parámetros por defecto de la función threshold no son capaces de eliminar el ruido de tipo sinusoidal de la manera en que si lo era con el ruido de tipo gaussiano, un tipo de ruido aleatorio, al contrario que el sinusoidal, que es una señal periódica.
 ```{r}
 png("imwd/image1_sinusoidal.png", width = 800, height = 400)
 par(mfrow = c(2, 2), cex = 0.5)
@@ -640,7 +635,7 @@ procesar_imagen_wavelet_sinusoidal <- function(foto, tipo = "hard", policy = "un
 images_sin_ruido_sinusoidal<- lapply(images_recortadas, procesar_imagen_wavelet_sinusoidal, tipo ="soft", policy = "manual")
 ```
 
-Con un valor de umbral de 4 y variando el tipo a "soft", observamos que hemos conseguido eliminar el ruido sinusoidal de alta frecuencia, pero pagando un precio muy alto: los bordes de la imagen se disorsionan completamente y tenemos una muy baja resolución. Por otro lado, el ruido de frecuencia baja, aunque ha disminuido, claramente sigue presente en la imagen. El umbral necesario para eliminarlo con este método es tan alto que distorsionaría la imagen casi por completo.
+Con un valor de umbral de 4 y variando el tipo a "soft", observamos que hemos conseguido eliminar el ruido sinusoidal de alta frecuencia, pero pagando un precio muy alto: los bordes de la imagen se disorsionan completamente y tenemos una muy baja resolución. Por otro lado, el ruido de frecuencia baja, aunque ha disminuido, claramente sigue presente en la imagen.
 ```{r}
 png("imwd/image1_sinusoidal_manual.png", width = 800, height = 400)
 par(mfrow = c(2, 2), cex = 0.5)
@@ -750,7 +745,7 @@ rm(images_recortadas, images_sin_ruido, images_sin_ruidos)
 
 ### Ampliando las imágenes
 
-Vamos a emplear ahora el otro método: aumentando la matriz con 0 ó 1 hasta el tamaño adecuado para poder aplicar la función `imwd`. Comenzamos generando las imágenes con ruido. Se elige la foto con menor resolución (imagen 5) porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas debido a que la matriz se hace demasiado grande. Se aplican distintos ruidos a la  misma imagen, se presenta una foto de ejemplo con ruido gaussiano.
+Vamos a emplear ahora el otro método: aumentando la matriz con 0 hasta el tamaño adecuado para poder aplicar la función `imwd`. Comenzamos generando las imágenes con ruido. Se elige la foto con menor resolución (imagen 5) porque, al aplicar la función a fotos con mayor cantidad de píxeles, se genera un problema con el uso de la memoria en R para cargarlas debido a que la matriz se hace demasiado grande. 
 
 ```{r,echo=FALSE, eval = TRUE}
 gaussian_noise_5<-add_noise_to_image("5", "gaussian", list(std_dev = 0.5))
@@ -769,7 +764,7 @@ names(imagen_noise) <- c('Noise: gaussian', 'Noise: sinusoidal_high','Noise: sin
                          'Noise: gamma', 'Noise: unif')
 ```
 
-Se genera una función que ajusta cualquier imagen rectangular a un tamaño cuadrado. La diferencia con el método empleando `resize` es que mantiene sus proporciones originales al agregar relleno si es necesario. Esta transformación asegura que la imagen sea compatible con el algoritmo IMWD.
+Se genera una función que ajusta cualquier imagen rectangular a un tamaño cuadrado. La diferencia con el método empleando `resize` es que mantiene sus proporciones originales al agregar relleno si es necesario. Esta transformación asegura que la imagen sea compatible con `imwd`.
 
 ```{r,echo=FALSE, eval = TRUE}
 hacer_cuadrada_potencia_2 <- function(imagen) {
@@ -836,9 +831,9 @@ str(fotos_cuadradas)
 #}
 ```
 
- Una vez tenemos las imágenes con ruido generadas y ampliadas en potencia de 2 en este caso de 2.048x2.048 pixeles, aplicamos la función imwd a cada uno de los tres canales (R, G y B). Usando la función procesar_imagen_wavelet que devuelve las imágenes reconstruidas después del thresholding.
+ Una vez tenemos las imágenes con ruido generadas y ampliadas en potencia de 2, aplicamos la función imwd a cada uno de los tres canales (R, G y B). Usando la función procesar_imagen_wavelet que devuelve las imágenes reconstruidas después del thresholding.
  
- Aplicamos en cada ruido dos tecnicas para seleccionar el umbral: Universal y fdr, además especificamos que el umbral sea 'hard'. Presentamos las imagenes sin el relleno para que sea más facil de visualizar y ocupamos una función del paquete magick para juntar tres imagenes y agregar título, esto lo hacemos en la función `imprimir`. 
+Aplicamos en cada ruido dos técnicas para seleccionar el umbral: Universal y fdr, además especificamos que el umbral sea 'hard'. Las imagenes se presentan sin el relleno para que sea más fácil de visualizar. 
  
 
 ```{r,echo= FALSE, eval = TRUE}
@@ -898,39 +893,39 @@ Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar e
 
 Eliminar Ruido Gaussiano: Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
  
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="15%"}
 suppressMessages(imprimir(1))
 ```
 
                          
 Eliminar Ruido Sinusoidal de alta frecuencia: Al igual que en el ruido gaussiano, se observa que al eliminar el ruido sinusoidal alto el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
  
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="15%"}
 suppressMessages(imprimir(2))
 ```
 
 Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observar diferencias
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="15%"}
 suppressMessages(imprimir(3))
 ```
 
 En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina, obteniendo una imagen mejorada con FDR.
 
 Eliminar Ruido Salt and pepper: 
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="15%"}
 suppressMessages(imprimir(4))
 ```
 
 
 Eliminar  Ruido uniforme:
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="15%"}
 suppressMessages(imprimir(6))
 ```
 
 En el caso de ruido gamma, no se logra una eliminación adecuada con FDR, y el método universal parece ofrecer mejores resultados.
 
 Eliminar Ruido gamma:
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="15%"}
 suppressMessages(imprimir(5))
 ```
 
@@ -1044,7 +1039,7 @@ umbral <- c("soft", "hard")
 
 Finalmente, realizaremos la descomposición de la imagen con 4 filtros wavelet distintos, 4 wavelets con diferentes formas (pueden ser simétricas o no), y diferente numero de coeficientes (suavidad).
 
-d4 (Daubechies 4),la8 (Least Asymmetric 8), bl14 (Best Localized 14), mb8 (Maximum Flat 8)
+* d4 (Daubechies 4),la8 (Least Asymmetric 8), bl14 (Best Localized 14), mb8 (Maximum Flat 8)
 
 ```{r, out.width="60%", out.height="20%"}
 
@@ -1136,7 +1131,7 @@ dev.off()
 knitr::include_graphics("denoisedwt2d/gaussian.png")
 ```
 
-```{r, eval= TRUE, out.height="70%"}
+```{r, eval= TRUE, out.height="80%"}
 include_graphics("denoisedwt2d/gaussian_denoised.png")
 
 ```
@@ -1214,7 +1209,7 @@ dev.off()
 
 ```
 
-```{r, eval = TRUE, out.width="70%"}
+```{r, eval = TRUE, out.width="80%"}
 
 knitr::include_graphics("denoisedwt2d/sinhigh_denoised_show.png")
 
@@ -1264,7 +1259,7 @@ dev.off()
 knitr::include_graphics("denoisedwt2d/sinlow.png")
 ```
 
-```{r, out.height="70%"}
+```{r, out.height="80%"}
 include_graphics("denoisedwt2d/sinlow_denoised.png")
 ```
 
@@ -1312,7 +1307,7 @@ knitr::include_graphics("denoisedwt2d/pepper.png")
 ```
 
 
-```{r, out.height="70%"}
+```{r, out.height="80%"}
 include_graphics("denoisedwt2d/pepper_denoised.png")
 
 ```
@@ -1337,7 +1332,7 @@ dev.off()
 
 ```
 
-```{r, eval = TRUE, out.width="60%"}
+```{r, eval = TRUE, out.width="80%"}
 
 knitr::include_graphics("denoisedwt2d/pepper_denoised_show.png")
 
@@ -1500,7 +1495,7 @@ dev.off()
 
 ```
 
-```{r, eval = TRUE, out.width="50%"}
+```{r, eval = TRUE, out.width="80%"}
 
 knitr::include_graphics("denoisedwt2d/image5_denoised_show.png")
 
@@ -1628,7 +1623,7 @@ dev.off()
 # plot(Image((imgr), colormode = "Color"))
 # plot(Image((img), colormode = "Color"))
 ```
-```{r, eval = TRUE, out.width="40%", out.height="40%"}
+```{r, eval = TRUE, out.width="60%", out.height="60%"}
 knitr::include_graphics("fftshift/image1_fourier.png")
 ```
 
@@ -1640,7 +1635,7 @@ rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g,
 ```
 
 
-La siguiente prueba se ha realizado con la imagen 2 y ruido sinusoidal alto. Este tipo de ruido es el que más problemas generó con los otros dos métodos.
+La siguiente prueba se ha realizado con la imagen 2 y ruido sinusoidal alto. Este tipo de ruido es el que más problemas generó con el primer método.
 
 
 ```{r echo=F,  eval = FALSE}
@@ -1746,10 +1741,10 @@ dev.off()
 # plot(Image((img), colormode = "Color"))
 ```
 
-```{r, eval = TRUE, out.width="40%", out.height="40%"}
+```{r, eval = TRUE, out.width="60%", out.height="60%"}
 knitr::include_graphics("fftshift/image2_fourier.png")
 ```
-
+Como se puede observar, la eliminación de este ruido con transformadas de Fourier es mejor que con el método de transformadas wavelet y thresholding manual, obteniendo resultados parecidos al de la función `denoise.dwt.2d`.
 ```{r echo=F, eval = FALSE}
 rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g, 
    fft_b, n_b, fshift_b, spectr_b, small, spectr_shifted_r, spectr_shifted_g,
@@ -1869,3 +1864,14 @@ rm(imgr, fft_r, n_r, fshift_r, spectr_r, fft_g, n_g, fshift_g, spectr_g,
 ```
 
 # Conclusiones
+
+A lo largo del trabajo se han desarrollado 3 métodos distintos para eliminación de ruido sintético en imágenes, dos basados en transformadas wavelet y uno en transformadas de Fourier. Se han generado diversos tipos de ruido (gaussiano, sinusoidal, gamma...) y se han analizado los resultados variando distintos parámetros.
+
+Comenzamos por el método de transformada wavelet más manual. El primer problema con el que nos encontramos es el tamaño de las imágenes, lo cual solucionamos de dos maneras distintas: redimensionando las imágenes (lo que puede inducir distorsión) o agregando espacio en negro (lo que provocaba problemas de memoria en fotos más grandes o de mayor calidad). Obtenemos que la eliminación de ruido es bastante buena aunque se observa el suavizado de las imágenges, salvo en el caso sinusoidal, donde no se ha conseguido emplear parámetros adecuados para su eliminación.
+
+`denoise.dwt.2d`, función implementada en R, emplea también transformadas wavelet y con este método encontramos resultados mejores. Por un lado, no se tienen problemas de tamaño y, en general, se observa una mejoría en la eliminación de ruido, habiendo un buen equilibrio entre el suavizado y el ruido. Esta función si es capaz de eliminar el ruido sinusoidal.
+
+Finalmente, empleamos transformadas de Fourier. Destacamos en este caso que realizando manualmente la disminución de altas frecuencias si se ha conseguido eliminar el ruido sinusoidal sin una gran distorsión a la imagen.
+
+Los tres métodos son capaces de realizar la eliminación de ruido sintético, destacando `denoise.dwt.2d` por su simpleza, facilidad de uso y resultados.
+
