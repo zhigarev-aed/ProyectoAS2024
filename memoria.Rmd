@@ -65,7 +65,7 @@ En el campo del análisis de señales, un problema importante es la eliminación
 
 El uso de wavelets es una herramienta clave para abordar este problema. Este método ofrece la posibilidad de adaptarse a las características particulares de cada tipo de ruido para su eliminación.
 
-En este trabajo se exploraran la capacidad de los wavelets para la eliminación de ruido en imágenes. Para ello, se generarán diferentes tipos de ruido sintético y determinando los parámetros más eficaces de los wavelets para su eliminación a través de 3 métodos distintos.  
+En este trabajo se explorarán la capacidad de los wavelets para la eliminación de ruido en imágenes. Para ello, se generarán diferentes tipos de ruido sintético y se determinarán los parámetros más eficaces de las wavelets para su eliminación a través de 3 métodos distintos.  
 
 # Fundamento teórico: eliminación de ruido con wavelets
 
@@ -893,39 +893,39 @@ Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar e
 
 Eliminar Ruido Gaussiano: Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
  
-```{r,echo=FALSE, eval = TRUE, out.height="15%"}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(1))
 ```
 
                          
 Eliminar Ruido Sinusoidal de alta frecuencia: Al igual que en el ruido gaussiano, se observa que al eliminar el ruido sinusoidal alto el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
  
-```{r,echo=FALSE, eval = TRUE, out.height="15%"}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(2))
 ```
 
 Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observar diferencias
-```{r,echo=FALSE, eval = TRUE, out.height="15%"}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(3))
 ```
 
 En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina, obteniendo una imagen mejorada con FDR.
 
 Eliminar Ruido Salt and pepper: 
-```{r,echo=FALSE, eval = TRUE, out.height="15%"}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(4))
 ```
 
 
 Eliminar  Ruido uniforme:
-```{r,echo=FALSE, eval = TRUE, out.height="15%"}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(6))
 ```
 
 En el caso de ruido gamma, no se logra una eliminación adecuada con FDR, y el método universal parece ofrecer mejores resultados.
 
 Eliminar Ruido gamma:
-```{r,echo=FALSE, eval = TRUE, out.height="15%"}
+```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(5))
 ```
 
