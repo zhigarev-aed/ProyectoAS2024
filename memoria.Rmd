@@ -4,15 +4,15 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   html_document:
     echo: true
     number_sections: true
     theme: lumen
     toc: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
@@ -61,7 +61,7 @@ knitr::opts_chunk$set(echo=FALSE,fig.align='center',out.width = '100%', eval = F
 
 # Introducción  
 
-En el campo del análisis de señales, un problema importante es la eliminación de ruido en imágenes digitales. Las señale a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
+En el campo del análisis de señales, un problema importante es la eliminación de ruido en imágenes digitales. Las señales a menudo están contaminadas por ruido debido a interferencias en los procesos de captura o transmisión. Este ruido, que puede existir de formas muy diversas como ruido gaussiano, artefactos asociados a frecuencias altas o bajas, o efectos multiplicativos, complica la extracción de características significativas.
 
 El uso de wavelets es una herramienta clave para abordar este problema. Este método ofrece la posibilidad de adaptarse a las características particulares de cada tipo de ruido para su eliminación.
 
@@ -69,7 +69,7 @@ En este trabajo se explorarán la capacidad de los wavelets para la eliminación
 
 # Fundamento teórico: eliminación de ruido con wavelets
 
-Los wavelets son funciones matemáticas que suelen emplearpara descomponer una señal en componentes de diferentes escalas, lo que resulta útil para identificar y procesar características específicas. Este enfoque es especialmente relevante en la eliminación de ruido, donde las frecuencias indeseadas pueden ser separadas y reducidas sin afectar significativamente las características principales de la señal original. A diferencia de la transformada de Fourier, que opera globalmente y no ofrece información sobre el espacio, los wavelets permiten un análisis localizado, facilitando la identificación de patrones y anomalías en los datos.
+Los wavelets son funciones matemáticas que suelen emplear para descomponer una señal en componentes de diferentes escalas, lo que resulta útil para identificar y procesar características específicas. Este enfoque es especialmente relevante en la eliminación de ruido, donde las frecuencias indeseadas pueden ser separadas y reducidas sin afectar significativamente las características principales de la señal original. A diferencia de la transformada de Fourier, que opera globalmente y no ofrece información sobre el espacio, los wavelets permiten un análisis localizado, facilitando la identificación de patrones y anomalías en los datos.
 
 El proceso de reducción de ruido con wavelets generalmente incluye tres etapas principales: la descomposición de la señal utilizando una wavelet madre, la modificación de los coeficientes wavelet mediante técnicas de umbral, y la reconstrucción de la señal. La selección de la wavelet madre adecuada y los parámetros de umbral son aspectos críticos que deben adaptarse a las características específicas del ruido y la señal.
 
@@ -891,25 +891,25 @@ return(imagen_combinada_recortada)
 
 Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar el ruido, los cambios no son tan notorios como en otras imágenes.
 
-Eliminar Ruido Gaussiano: Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
+Eliminar Ruido Gaussiano: Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal, sin embargo al observar más de cerca vemos que al parecer el ruido no se ha eliminado completamente.
  
 ```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(1))
 ```
 
                          
-Eliminar Ruido Sinusoidal de alta frecuencia: Al igual que en el ruido gaussiano, se observa que al eliminar el ruido sinusoidal alto el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal.
+Eliminar Ruido Sinusoidal de alta frecuencia: Al igual que en el ruido gaussiano, se observa que el umbral FDR no logra eliminar y el ruido es bastante evidente.
  
 ```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(2))
 ```
 
-Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observar diferencias
+Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observar diferencias, ambos umbrales no funcionan bien.
 ```{r,echo=FALSE, eval = TRUE, out.height="10%"}
 suppressMessages(imprimir(3))
 ```
 
-En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina, obteniendo una imagen mejorada con FDR.
+En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina en universal , sin embargo en FDR se mantiene.
 
 Eliminar Ruido Salt and pepper: 
 ```{r,echo=FALSE, eval = TRUE, out.height="10%"}
@@ -929,7 +929,7 @@ Eliminar Ruido gamma:
 suppressMessages(imprimir(5))
 ```
 
-El umbral Universal emplea un valor fijo basado en el tamaño de la señal, lo que limita su capacidad para capturar completamente la variabilidad del ruido. En contraste, FDR estima la probabilidad de que un coeficiente wavelet provenga del ruido, lo que le permite adaptarse mejor a las características específicas de la señal. Como resultado, FDR puede ofrecer una eliminación de ruido más adaptativa, preservando mejor los detalles de la imagen. Por lo que, parece ser una opción más adecuada en la mayoría de los casos de ruido analizados anteriormente.
+El umbral Universal emplea un valor fijo basado en el tamaño de la señal, lo que limita su capacidad para capturar completamente la variabilidad del ruido. En contraste, FDR estima la probabilidad de que un coeficiente wavelet provenga del ruido, lo que le permite adaptarse mejor a las características específicas de la señal. Como resultado, FDR puede ofrecer una eliminación de ruido más adaptativa, preservando mejor los detalles de la imagen. sin embargo esto provoca que el ruido no sea completamente eliminado en las imagenes. .
 
 
 ```{r,echo=FALSE}
