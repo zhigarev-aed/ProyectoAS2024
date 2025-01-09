@@ -909,7 +909,7 @@ Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observ
 suppressMessages(imprimir(3))
 ```
 
-En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina en universal , sin embargo en FDR se mantiene.
+En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina usando universal, sin embargo en FDR se mantiene.
 
 Eliminar Ruido Salt and pepper: 
 ```{r,echo=FALSE, eval = TRUE, out.height="10%"}
@@ -929,7 +929,7 @@ Eliminar Ruido gamma:
 suppressMessages(imprimir(5))
 ```
 
-El umbral Universal emplea un valor fijo basado en el tamaño de la señal, lo que limita su capacidad para capturar completamente la variabilidad del ruido. En contraste, FDR estima la probabilidad de que un coeficiente wavelet provenga del ruido, lo que le permite adaptarse mejor a las características específicas de la señal. Como resultado, FDR puede ofrecer una eliminación de ruido más adaptativa, preservando mejor los detalles de la imagen. sin embargo esto provoca que el ruido no sea completamente eliminado en las imagenes. .
+El umbral Universal emplea un valor fijo basado en el tamaño de la señal, lo que limita su capacidad para capturar completamente la variabilidad del ruido. En contraste, FDR estima la probabilidad de que un coeficiente wavelet provenga del ruido, lo que le permite adaptarse mejor a las características específicas de la señal. Como resultado, FDR puede ofrecer una eliminación de ruido más adaptativa y suave, preservando mejor los detalles de la imagen. sin embargo esto provoca que el ruido no sea completamente eliminado en las imagenes.
 
 
 ```{r,echo=FALSE}
