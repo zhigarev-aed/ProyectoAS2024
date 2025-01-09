@@ -4,15 +4,15 @@ subtitle: "Análisis de señales"
 author: "Grupo E: Alejandra Venegas, Rebeca Company, Marta Medina, Alejandro Cornelio y Ilia Zhigarev."
 date: "`r Sys.Date()`"
 output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
   html_document:
     echo: true
     number_sections: true
     theme: lumen
     toc: true
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
   bookdown::pdf_document2:
     toc: true
     toc_depth: 3
@@ -893,39 +893,39 @@ Recordemos que la imagen 5 es la de menor resolución, por lo que, al eliminar e
 
 Eliminar Ruido Gaussiano: Se observa que al eliminar el ruido gaussiano el umbral FDR podría ofrecer una ligera mejora en la eliminación de ruido en comparación con el umbral Universal, sin embargo al observar más de cerca vemos que al parecer el ruido no se ha eliminado completamente.
  
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="30%"}
 suppressMessages(imprimir(1))
 ```
 
                          
 Eliminar Ruido Sinusoidal de alta frecuencia: Al igual que en el ruido gaussiano, se observa que el umbral FDR no logra eliminar y el ruido es bastante evidente.
  
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="30%", out.width="100%"}
 suppressMessages(imprimir(2))
-```
+``` 
 
 Eliminar Ruido Sinusoidal de baja frecuencia: En este caso es muy dificil observar diferencias, ambos umbrales no funcionan bien.
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="30%", out.width="100%"}
 suppressMessages(imprimir(3))
 ```
 
 En los casos de ruido tipo 'salt and pepper' y uniforme, se observa que el ruido se elimina usando universal, sin embargo en FDR se mantiene.
 
 Eliminar Ruido Salt and pepper: 
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="30%", out.width="100%"}
 suppressMessages(imprimir(4))
 ```
 
 
 Eliminar  Ruido uniforme:
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE,out.height="30%", out.width="100%"}
 suppressMessages(imprimir(6))
 ```
 
 En el caso de ruido gamma, no se logra una eliminación adecuada con FDR, y el método universal parece ofrecer mejores resultados.
 
 Eliminar Ruido gamma:
-```{r,echo=FALSE, eval = TRUE, out.height="10%"}
+```{r,echo=FALSE, eval = TRUE, out.height="30%", out.width="100%"}
 suppressMessages(imprimir(5))
 ```
 
